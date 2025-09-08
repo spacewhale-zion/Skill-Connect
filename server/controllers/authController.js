@@ -44,11 +44,15 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (user) {
-    res.status(201).json({
+   res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
       skills: user.skills,
+      location: user.location,           // <-- ADD THIS
+      bio: user.bio,                     // <-- ADD THIS
+      averageRating: user.averageRating, // <-- ADD THIS
+      profilePicture: user.profilePicture, // <-- ADD THIS
       token: generateToken(user._id),
     });
   } else {
@@ -70,11 +74,15 @@ const loginUser = asyncHandler(async (req, res) => {
 
   // Check if user exists and password matches
   if (user && (await user.matchPassword(password))) {
-    res.json({
+   res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
       skills: user.skills,
+      location: user.location,           // <-- ADD THIS
+      bio: user.bio,                     // <-- ADD THIS
+      averageRating: user.averageRating, // <-- ADD THIS
+      profilePicture: user.profilePicture, // <-- ADD THIS
       token: generateToken(user._id),
     });
   } else {
@@ -98,9 +106,11 @@ const getUserProfile = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       skills: user.skills,
-      location: user.location,
-      profilePicture: user.profilePicture,
-      averageRating: user.averageRating,
+      location: user.location,           // <-- ADD THIS
+      bio: user.bio,                     // <-- ADD THIS
+      averageRating: user.averageRating, // <-- ADD THIS
+      profilePicture: user.profilePicture, // <-- ADD THIS
+      token: generateToken(user._id),
     });
   } else {
     res.status(404);

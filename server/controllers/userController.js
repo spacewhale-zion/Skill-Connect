@@ -34,6 +34,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     user.name = req.body.name || user.name;
     user.skills = req.body.skills || user.skills;
     user.profilePicture = req.body.profilePicture || user.profilePicture;
+    user.bio = req.body.bio || user.bio;
 
     // Handle location update specifically for GeoJSON structure
     if (req.body.location && req.body.location.coordinates) {
@@ -53,6 +54,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       skills: updatedUser.skills,
       profilePicture: updatedUser.profilePicture,
       location: updatedUser.location,
+      bio:updatedUser.bio
     });
   } else {
     res.status(404);

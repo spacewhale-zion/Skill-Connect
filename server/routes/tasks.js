@@ -10,12 +10,19 @@ import {
   getTaskById,
   assignTask,
   completeTask,
+  getMyPostedTasks,
+  getMyAssignedTasks,
 } from '../controllers/taskController.js';
 
 import { createBid, getBidsForTask } from '../controllers/bidController.js';
 import { createReview } from '../controllers/reviewController.js';
 
 const router = express.Router();
+
+
+// --- Routes for Dashboard ---
+router.route('/mytasks').get(protect, getMyPostedTasks);
+router.route('/assignedtome').get(protect, getMyAssignedTasks);
 
 // --- Main Task Routes ---
 router.route('/')

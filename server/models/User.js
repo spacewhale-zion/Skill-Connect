@@ -17,6 +17,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    bio:{
+      type:String,
+      default:""
+    },
     profilePicture: {
       type: String,
       default: '', // Optional: Add a default avatar URL

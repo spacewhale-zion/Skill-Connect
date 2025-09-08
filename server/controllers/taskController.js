@@ -27,18 +27,25 @@ const createTask = asyncHandler(async (req, res) => {
   res.status(201).json(task);
 });
 
+
+
 /**
  * @desc    Get tasks, with optional geo-filtering
  * @route   GET /api/tasks
  * @access  Public
  */
 const getTasks = asyncHandler(async (req, res) => {
-  const { lat, lng, radius, category } = req.query;
+  const { lat, lng, radius, category, keyword, maxBudget } = req.query;
   const queryObject = { status: 'Open' };
 
-  // Geospatial Filtering
+  // 1. Keyword/Skill search using the text index
+  if (keyword) {
+    queryObject.$text = { $search: keyword };
+  }
+
+  // 2. Geospatial Filtering
   if (lat && lng && radius) {
-    const radiusInMeters = parseInt(radius) * 1000; // Convert km to meters
+    const radiusInMeters = parseInt(radius) * 1000;
     queryObject.location = {
       $nearSphere: {
         $geometry: {
@@ -50,9 +57,15 @@ const getTasks = asyncHandler(async (req, res) => {
     };
   }
 
-  // Category Filtering
+  // 3. Category Filtering
   if (category) {
     queryObject.category = category;
+  }
+  
+  // 4. Budget Filtering (using 'less than or equal to')
+  if (maxBudget) {
+    // Use dot notation for nested fields
+    queryObject['budget.amount'] = { $lte: parseInt(maxBudget) };
   }
 
   const tasks = await Task.find(queryObject)
@@ -155,10 +168,32 @@ const completeTask = asyncHandler(async (req, res) => {
 });
 
 
+//  * @access  Private
+//  */
+const getMyPostedTasks = asyncHandler(async (req, res) => {
+  // Find all tasks where the taskSeeker matches the logged-in user's ID
+  const tasks = await Task.find({ taskSeeker: req.user._id }).sort({ createdAt: -1 });
+  res.status(200).json(tasks);
+});
+
+/**
+ * @desc    Get tasks assigned to the logged-in user
+ * @route   GET /api/tasks/assignedtome
+ * @access  Private
+ */
+const getMyAssignedTasks = asyncHandler(async (req, res) => {
+  // Find all tasks where the assignedProvider matches the logged-in user's ID
+  const tasks = await Task.find({ assignedProvider: req.user._id }).sort({ createdAt: -1 });
+  res.status(200).json(tasks);
+});
+
+
 export {
   createTask,
   getTasks,
   getTaskById,
   assignTask,
   completeTask,
+  getMyAssignedTasks,
+  getMyPostedTasks
 };
