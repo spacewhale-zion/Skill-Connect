@@ -3,3 +3,8 @@
 html, body {
  user-select: none;
 }
+
+
+.modal-open .leaflet-container {
+  z-index: 0;
+}

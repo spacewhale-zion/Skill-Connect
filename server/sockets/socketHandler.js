@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Message from '../models/Message.js';
 
 // This Map will store the mapping of userId to socketId
 const onlineUsers = new Map();

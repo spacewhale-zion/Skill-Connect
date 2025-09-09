@@ -35,6 +35,7 @@ export const getTaskById = async (taskId: string): Promise<Task> => {
 // The getTasks function is now updated to use the full interface
 export const getTasks = async (params: TaskSearchParams): Promise<Task[]> => {
   const filteredParams = Object.fromEntries(Object.entries(params).filter(([_, v]) => v != null && v !== ''));
+  console.log(filteredParams);
   const { data } = await api.get('/tasks', { params: filteredParams });
   return data;
 };

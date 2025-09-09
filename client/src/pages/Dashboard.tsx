@@ -46,7 +46,7 @@ const DashboardPage = () => {
   }
 
   return (
-    <div>
+    <div className={isModalOpen ? 'modal-open' : ''}>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Welcome, {user?.name}!</h1>
         {/* This button now opens the modal */}

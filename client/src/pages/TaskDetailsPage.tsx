@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
-import { getTaskById, Task, assignTask, completeTask } from '../services/taskServices';
-import { getBidsForTask, Bid } from '../services/bidServices';
+import { getTaskById,  assignTask, completeTask } from '../services/taskServices';
+import { getBidsForTask} from '../services/bidServices';
 import toast from 'react-hot-toast';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import MapView from '../components/map/MapView';
 import PlaceBidForm from '../components/bids/PlaceBidsForm';
+import ChatWindow from '../components/chat/ChatWindow';
+
+import type {Bid,Task} from '../types/index'
 
 const TaskDetailsPage = () => {
   const { taskId } = useParams<{ taskId: string }>();
@@ -15,6 +18,10 @@ const TaskDetailsPage = () => {
   const [task, setTask] = useState<Task | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(true);
+   const [isChatOpen, setIsChatOpen] = useState(false);
+
+
+  
 
   const fetchTaskData = async () => {
     if (!taskId) return;
@@ -64,6 +71,8 @@ const TaskDetailsPage = () => {
   if (!task) return <div>Task not found.</div>;
   
   const isOwner = user && user._id === task.taskSeeker._id;
+  const isAssignedProvider = user && user._id === task.assignedProvider?._id;
+  const chatRecipient = isOwner ? task.assignedProvider : task.taskSeeker;
   
   // Reverse coordinates for Leaflet: [latitude, longitude]
   const mapCoordinates: [number, number] = [task.location.coordinates[1], task.location.coordinates[0]];
@@ -120,6 +129,23 @@ const TaskDetailsPage = () => {
                 </div>
               )}
 
+
+               {user && (isOwner || isAssignedProvider) && task.status === 'Assigned' && (
+      <div className="mt-6">
+        <button 
+          onClick={() => setIsChatOpen(true)}
+          className="w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700"
+        >
+          Chat with {chatRecipient?.name}
+        </button>
+        {isOwner && (
+          <button onClick={handleCompleteTask} className="w-full mt-4 py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600">
+            Mark as Complete
+          </button>
+        )}
+      </div>
+    )}
+
               {user && !isOwner && task.status === 'Open' && (
                  <PlaceBidForm taskId={task._id} onBidPlaced={fetchTaskData} />
               )}
@@ -133,6 +159,13 @@ const TaskDetailsPage = () => {
           </div>
         </div>
       </div>
+      {isChatOpen && chatRecipient && (
+      <ChatWindow
+        taskId={task._id}
+        recipientName={chatRecipient.name}
+        onClose={() => setIsChatOpen(false)}
+      />
+    )}
       <Footer />
     </div>
   );

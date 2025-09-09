@@ -56,7 +56,10 @@ const taskSchema = new mongoose.Schema(
 );
 
 // Create a 2dsphere index for geospatial queries
-taskSchema.index({ location: '2dsphere', title: 'text', description: 'text', category: 'text'  });
+taskSchema.index({ location: '2dsphere' });
+
+// Create a separate text index for keyword searching
+taskSchema.index({ title: 'text', description: 'text', category: 'text' });
 
 const Task = mongoose.model('Task', taskSchema);
 export default Task;
