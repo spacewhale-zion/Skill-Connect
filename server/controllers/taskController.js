@@ -34,46 +34,67 @@ const createTask = asyncHandler(async (req, res) => {
  * @route   GET /api/tasks
  * @access  Public
  */
+
+
 const getTasks = asyncHandler(async (req, res) => {
   const { lat, lng, radius, category, keyword, maxBudget } = req.query;
-  const queryObject = { status: 'Open' };
 
-  // 1. Keyword/Skill search using the text index
+  let tasksQuery = { status: 'Open' };
+
+  // Step 1: Keyword/Skill search (if provided)
+  let textMatchedIds = null;
   if (keyword) {
-    queryObject.$text = { $search: keyword };
+    const textResults = await Task.find(
+      { $text: { $search: keyword }, status: 'Open' },
+      { _id: 1 }
+    );
+    textMatchedIds = textResults.map((doc) => doc._id);
+
+    // if no match, return early
+    if (textMatchedIds.length === 0) {
+      return res.status(200).json([]);
+    }
   }
 
-  // 2. Geospatial Filtering
+  // Step 2: Build base query
+  if (category) {
+    tasksQuery.category = category;
+  }
+  if (maxBudget) {
+    tasksQuery['budget.amount'] = { $lte: parseInt(maxBudget) };
+  }
+  if (textMatchedIds) {
+    tasksQuery._id = { $in: textMatchedIds };
+  }
+
+  // Step 3: Handle geospatial separately
+  let tasks;
   if (lat && lng && radius) {
     const radiusInMeters = parseInt(radius) * 1000;
-    queryObject.location = {
-      $nearSphere: {
-        $geometry: {
-          type: 'Point',
-          coordinates: [parseFloat(lng), parseFloat(lat)],
+    tasks = await Task.find({
+      ...tasksQuery,
+      location: {
+        $nearSphere: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [parseFloat(lng), parseFloat(lat)],
+          },
+          $maxDistance: radiusInMeters,
         },
-        $maxDistance: radiusInMeters,
       },
-    };
+    })
+      .populate('taskSeeker', 'name profilePicture')
+      .sort({ createdAt: -1 });
+  } else {
+    tasks = await Task.find(tasksQuery)
+      .populate('taskSeeker', 'name profilePicture')
+      .sort({ createdAt: -1 });
   }
-
-  // 3. Category Filtering
-  if (category) {
-    queryObject.category = category;
-  }
-  
-  // 4. Budget Filtering (using 'less than or equal to')
-  if (maxBudget) {
-    // Use dot notation for nested fields
-    queryObject['budget.amount'] = { $lte: parseInt(maxBudget) };
-  }
-
-  const tasks = await Task.find(queryObject)
-    .populate('taskSeeker', 'name profilePicture')
-    .sort({ createdAt: -1 });
 
   res.status(200).json(tasks);
 });
+
+
 
 /**
  * @desc    Get a single task by its ID

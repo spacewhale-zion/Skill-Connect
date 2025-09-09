@@ -20,7 +20,7 @@ const ChatWindow = ({ taskId, recipientName, onClose }: ChatWindowProps) => {
 
   useEffect(() => {
     // Connect to the socket server
-    const newSocket = io('https://localhost:5173', { // Use your server URL
+    const newSocket = io("http://localhost:5000", { // Use your server URL
       auth: { token: user?.token }
     });
     setSocket(newSocket);

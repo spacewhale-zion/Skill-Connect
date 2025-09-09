@@ -14,7 +14,7 @@ const FindTasksPage = () => {
     lat: 20.5937, // Default center of India
     lng: 78.9629,
     radius: 50,
-    keyword: '',
+    keyword:'',
     maxBudget: undefined,
     category: '',
   });
@@ -94,7 +94,7 @@ const FindTasksPage = () => {
               {/* Radius Slider */}
               <div className="md:col-span-2">
                   <label className="text-sm">Search Radius: {filters.radius} km</label>
-                  <input type="range" name="radius" min="1" max="50" value={filters.radius} onChange={handleFilterChange} className="w-full" />
+                  <input type="range" name="radius" min="1" max="5000" value={filters.radius} onChange={handleFilterChange} className="w-full" />
               </div>
             </div>
           </div>
