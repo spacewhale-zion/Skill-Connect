@@ -131,3 +131,13 @@ export interface ProfileUpdateData {
   };
   profilePicture?: string;
 }
+
+
+export interface Notification {
+  _id: string;
+  title: string;
+  message: string;
+  link: string;
+  isRead: boolean;
+  createdAt: string;
+}

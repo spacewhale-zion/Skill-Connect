@@ -62,4 +62,23 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   }
 });
 
-export { getUserById, updateUserProfile };
+
+const saveFcmToken = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+  if (!token) {
+    res.status(400);
+    throw new Error('FCM token is required');
+  }
+
+  const user = await User.findById(req.user._id);
+  if (user) {
+    user.fcmToken = token;
+    await user.save();
+    res.status(200).json({ message: 'FCM token saved successfully' });
+  } else {
+    res.status(404);
+    throw new Error('User not found');
+  }
+});
+
+export { getUserById, updateUserProfile,saveFcmToken};

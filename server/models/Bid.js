@@ -32,5 +32,10 @@ const bidSchema = new mongoose.Schema(
   }
 );
 
+// --- ATOMICITY FIX ---
+// This ensures that the combination of a task and a provider is always unique,
+// preventing duplicate bids at the database level.
+bidSchema.index({ task: 1, provider: 1 }, { unique: true });
+
 const Bid = mongoose.model('Bid', bidSchema);
 export default Bid;

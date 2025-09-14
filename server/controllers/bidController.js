@@ -4,77 +4,85 @@ import Task from '../models/Task.js';
 import User from '../models/User.js'; // <-- FIX 1: Import the User model
 import { onlineUsers } from '../sockets/socketHandler.js';
 import { io } from '../server.js';
-// <-- FIX 1: Import the notification service function
 import { sendPushNotification } from '../services/notificationService.js';
+import Notification from '../models/Notification.js';
 
 /**
  * @desc    Create a new bid on a task
  * @route   POST /api/tasks/:taskId/bids
  * @access  Private
  */
+
 const createBid = asyncHandler(async (req, res) => {
   const { amount, message } = req.body;
   const { taskId } = req.params;
   const providerId = req.user._id;
 
   if (!amount) {
-    res.status(400);
-    throw new Error('Bid amount is required.');
+    return res.status(400).json({ message: 'Bid amount is required.' });
   }
 
   const task = await Task.findById(taskId);
 
-  // --- Validation (This part was already correct) ---
   if (!task) {
-    res.status(404);
-    throw new Error('Task not found.');
+    return res.status(404).json({ message: 'Task not found.' });
   }
   if (task.taskSeeker.equals(providerId)) {
-    res.status(400);
-    throw new Error('You cannot bid on your own task.');
+    return res.status(400).json({ message: 'You cannot bid on your own task.' });
   }
   if (task.status !== 'Open') {
-    res.status(400);
-    throw new Error('This task is no longer open for bidding.');
-  }
-  const existingBid = await Bid.findOne({ task: taskId, provider: providerId });
-  if (existingBid) {
-    res.status(400);
-    throw new Error('You have already placed a bid on this task.');
+    return res.status(400).json({ message: 'This task is no longer open for bidding.' });
   }
 
-  // --- Create Bid ---
-  const bid = await Bid.create({
-    task: taskId,
-    provider: providerId,
-    amount,
-    message,
-  });
+  try {
+    const bid = await Bid.create({
+      task: taskId,
+      provider: providerId,
+      amount,
+      message,
+    });
 
-  // --- FIX 2: Populate the bid with provider details ---
-  const populatedBid = await bid.populate('provider', 'name profilePicture');
+    const populatedBid = await bid.populate('provider', 'name profilePicture');
+    const providerName = populatedBid.provider.name;
 
-  // --- Push Notification Logic (Now Correct) ---
-  const taskSeeker = await User.findById(task.taskSeeker);
-  if (taskSeeker && taskSeeker.fcmToken) {
-    const title = 'New Bid on Your Task!';
-    const body = `${req.user.name} placed a bid on "${task.title}"`;
-    const data = { taskId: task._id.toString(), type: 'NEW_BID' };
-    await sendPushNotification(taskSeeker.fcmToken, title, body, data);
+    // --- NOTIFICATION LOGIC ---
+    const notificationTitle = 'You have a new bid!';
+    const notificationBody = `${providerName} placed a bid on your task: "${task.title}"`;
+    
+    // 1. Create the notification document and save it to the database.
+    const notification = await Notification.create({
+      user: task.taskSeeker,
+      title: notificationTitle,
+      message: notificationBody,
+      link: `/tasks/${task._id}`
+    });
+
+    // 2. Check if the task creator is online.
+    const taskSeekerId = task.taskSeeker.toString();
+    const recipientSocketId = onlineUsers.get(taskSeekerId);
+
+    if (recipientSocketId) {
+      // 3a. If they are online, emit a 'new_notification' event directly to their socket.
+      io.to(recipientSocketId).emit('new_notification', notification);
+    } else {
+      // 3b. If they are offline, send a push notification.
+      const taskSeeker = await User.findById(taskSeekerId);
+      if (taskSeeker && taskSeeker.fcmToken) {
+        await sendPushNotification(taskSeeker.fcmToken, notificationTitle, notificationBody, { taskId: task._id.toString(), type: 'NEW_BID' });
+      }
+    }
+    
+    res.status(201).json({
+      bid: populatedBid,
+      taskId: task._id
+    });
+
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'You have already placed a bid on this task.' });
+    }
+    res.status(500).json({ message: 'Server error while placing bid.' });
   }
-
-  // --- Real-time Notification Logic (Now Correct) ---
-  const taskSeekerId = task.taskSeeker.toString();
-  const recipientSocketId = onlineUsers.get(taskSeekerId);
-
-  if (recipientSocketId) {
-    io.to(recipientSocketId).emit('bid_received', populatedBid); // Use the populated bid
-  } else {
-    console.log(`Task seeker ${taskSeekerId} is offline. Not sending socket event.`);
-  }
-
-  // --- FIX 3: Send the populated bid in the response ---
-  res.status(201).json(populatedBid);
 });
 
 /**

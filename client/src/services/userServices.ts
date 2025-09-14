@@ -13,3 +13,7 @@ export const updateUserProfile = async (profileData: ProfileUpdateData): Promise
   const { data } = await api.put('/users/profile', profileData);
   return data;
 };
+
+export const saveFcmToken = async (token: string): Promise<void> => {
+  await api.post('/users/fcm-token', { token });
+};

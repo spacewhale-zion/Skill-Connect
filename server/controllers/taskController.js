@@ -154,6 +154,34 @@ const assignTask = asyncHandler(async (req, res) => {
     { status: 'Rejected' }
   );
 
+
+    // --- NEW: NOTIFY THE SUCCESSFUL BIDDER ---
+  const notificationTitle = 'Your bid was accepted!';
+  const notificationBody = `Your bid for the task "${task.title}" has been accepted. You can now chat with the task seeker.`;
+  
+  // 1. Create the notification document for the provider
+  const notification = await Notification.create({
+    user: providerId,
+    title: notificationTitle,
+    message: notificationBody,
+    link: `/tasks/${task._id}`
+  });
+
+  // 2. Check if the provider is online to send a real-time or push notification
+  const recipientSocketId = onlineUsers.get(providerId.toString());
+
+  if (recipientSocketId) {
+    // 3a. If online, emit a socket event
+    io.to(recipientSocketId).emit('new_notification', notification);
+  } else {
+    // 3b. If offline, send a push notification
+    const provider = await User.findById(providerId);
+    if (provider && provider.fcmToken) {
+      await sendPushNotification(provider.fcmToken, notificationTitle, notificationBody, { taskId: task._id.toString(), type: 'BID_ACCEPTED' });
+    }
+  }
+  // --- END OF NEW NOTIFICATION LOGIC ---
+
   res.status(200).json(updatedTask);
 });
 

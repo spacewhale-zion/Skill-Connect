@@ -6,13 +6,16 @@ import './App.css';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/authContext.tsx';
 import { Toaster } from 'react-hot-toast';
+import { NotificationProvider } from './context/notificationContext.tsx'; // Import NotificationProvider
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
-        <Toaster position="top-center" />
+        <NotificationProvider> {/* Wrap the App */}
+          <App />
+          <Toaster position="top-center" />
+        </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

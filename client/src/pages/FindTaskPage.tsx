@@ -94,7 +94,7 @@ const FindTasksPage = () => {
               {/* Radius Slider */}
               <div className="md:col-span-2">
                   <label className="text-sm">Search Radius: {filters.radius} km</label>
-                  <input type="range" name="radius" min="1" max="5000" value={filters.radius} onChange={handleFilterChange} className="w-full" />
+                  <input type="range" name="radius" min="1" max="500000" value={filters.radius} onChange={handleFilterChange} className="w-full" />
               </div>
             </div>
           </div>

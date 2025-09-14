@@ -6,9 +6,14 @@ import DashboardLayout from './pages/DashboardLayout';
 import TaskDetailsPage from './pages/TaskDetailsPage';
 import ProfilePage from './pages/ProfilePage';
 import FindTasksPage from './pages/FindTaskPage';
+import NotificationPermissionHandler from './components/notifications/NotificationHandler';
+import NotificationsPage from './pages/NotificationPage';
 
 function App() {
   return (
+    <>
+    <NotificationPermissionHandler/>
+   
     <Routes>
       <Route path="/" element={<HomePage />} /> 
       <Route path="/login" element={<LoginPage />} />
@@ -17,11 +22,17 @@ function App() {
       <Route path="/tasks/:taskId" element={<TaskDetailsPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/tasks" element={<FindTasksPage />} />
+    <Route path="/notifications" element={<NotificationsPage />} /> 
+
+      
+
 
 
 
 
     </Routes>
+
+    </>
   );
 }
 
