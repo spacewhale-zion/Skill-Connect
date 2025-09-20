@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/authContext';
+import { useAuth } from '../context/authContext.tsx';
 import toast from 'react-hot-toast';
 import { useNavigate, Link } from 'react-router-dom';
+import useFcmToken from '../hooks/useFCMtoken.ts';
 
 const RegisterPage = () => {
   const [name, setName] = useState('');
@@ -13,6 +14,8 @@ const RegisterPage = () => {
 
   const { register } = useAuth();
   const navigate = useNavigate();
+  const { token } = useFcmToken();
+  console.log(token)
 
   const handleGetLocation = () => {
     if (navigator.geolocation) {
@@ -36,31 +39,39 @@ const RegisterPage = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!latitude || !longitude) {
-      toast.error('Location is required.');
-      return;
-    }
+  e.preventDefault();
 
-    setIsSubmitting(true);
-    try {
-      await register({
-        name,
-        email,
-        password,
-        location: {
-          coordinates: [parseFloat(longitude), parseFloat(latitude)],
-        },
-      });
-      toast.success('Registration successful! Welcome!');
-      navigate('/'); // Redirect to home page after registration
-    } catch (error) {
-      toast.error('Registration failed. The email might already be in use.');
-      console.error(error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  if (!latitude || !longitude) {
+    toast.error("Location is required.");
+    return;
+  }
+
+  if (!token) {
+    toast.error("Notification token not ready yet, please try again.");
+    return;
+  }
+
+  setIsSubmitting(true);
+  try {
+    await register({
+      name,
+      email,
+      password,
+      location: {
+        coordinates: [parseFloat(longitude), parseFloat(latitude)],
+      },
+      fcmToken: token,
+    });
+    toast.success("Registration successful! Welcome!");
+    navigate("/");
+  } catch (error) {
+    toast.error("Registration failed. The email might already be in use.");
+    console.error(error);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">

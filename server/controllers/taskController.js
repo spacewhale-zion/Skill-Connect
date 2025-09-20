@@ -1,6 +1,11 @@
 import asyncHandler from 'express-async-handler';
 import Task from '../models/Task.js';
 import Bid from '../models/Bid.js';
+import User from '../models/User.js';
+import Notification from '../models/Notification.js';
+import { io } from '../server.js';
+import { onlineUsers } from '../sockets/socketHandler.js';
+import { sendPushNotification } from '../services/notificationService.js';
 
 /**
  * @desc    Create a new task
@@ -213,6 +218,41 @@ const completeTask = asyncHandler(async (req, res) => {
   task.completedAt = Date.now();
 
   const updatedTask = await task.save();
+
+  // --- NEW: NOTIFY THE ASSIGNED PROVIDER ---
+  if (task.assignedProvider) {
+    const notificationTitle = 'Task marked as completed!';
+    const notificationBody = `The task "${task.title}" has been marked as completed by the task seeker.`;
+
+    // 1. Create a DB notification
+    const notification = await Notification.create({
+      user: task.assignedProvider,
+      title: notificationTitle,
+      message: notificationBody,
+      link: `/tasks/${task._id}`
+    });
+
+    // 2. Check if provider is online
+    const recipientSocketId = onlineUsers.get(task.assignedProvider.toString());
+
+    if (recipientSocketId) {
+      // 2a. Real-time socket notification
+      io.to(recipientSocketId).emit('new_notification', notification);
+    } else {
+      // 2b. Push notification via FCM
+      const provider = await User.findById(task.assignedProvider);
+      if (provider && provider.fcmToken) {
+        await sendPushNotification(
+          provider.fcmToken,
+          notificationTitle,
+          notificationBody,
+          { taskId: task._id.toString(), type: 'TASK_COMPLETED' }
+        );
+      }
+    }
+  }
+  // --- END OF NEW NOTIFICATION LOGIC ---
+
   res.status(200).json(updatedTask);
 });
 

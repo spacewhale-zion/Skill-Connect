@@ -8,3 +8,8 @@ html, body {
 .modal-open .leaflet-container {
   z-index: 0;
 }
+
+/* Ensure leaflet map is behind modals and chat windows */
+.leaflet-container {
+z-index: 10;
+}

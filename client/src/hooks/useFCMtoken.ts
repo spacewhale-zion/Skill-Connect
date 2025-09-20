@@ -1,36 +1,52 @@
-import { useState, useEffect } from 'react';
-import { getToken } from 'firebase/messaging';
-import { messaging , VAPID_KEY} from '../firbase-config';
+// src/hooks/useFcmToken.ts
+import { useEffect, useState } from "react";
+import { getToken } from "firebase/messaging";
+import { messaging, VAPID_KEY } from "../firbase-config";
 
 const useFcmToken = () => {
-  const [token, setToken] = useState('');
-  const [notificationPermissionStatus, setNotificationPermissionStatus] = useState('');
+  const [token, setToken] = useState<string | null>(null);
+  const [permissionStatus, setPermissionStatus] = useState<string>("default");
 
   useEffect(() => {
     const retrieveToken = async () => {
       try {
-        if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-          const status = await Notification.requestPermission();
-          setNotificationPermissionStatus(status);
+        // Request notifications permission
+        const permission = await Notification.requestPermission();
+        setPermissionStatus(permission);
 
-          if (status === 'granted') {
-           
-            const fcmToken = await getToken(messaging, { vapidKey: VAPID_KEY });
-            
-            if (fcmToken) {
-              setToken(fcmToken);
-            }
-          }
+        if (permission !== "granted") {
+          console.warn("Notification permission not granted");
+          return;
         }
-      } catch (error) {
-        console.error('An error occurred while retrieving token. ', error);
+
+        // Register service worker
+        const registration = await navigator.serviceWorker.register(
+          "/firebase-messaging-sw.js"
+        );
+
+        // Get FCM token
+        const fcmToken = await getToken(messaging, {
+          vapidKey: VAPID_KEY,
+          serviceWorkerRegistration: registration,
+        });
+
+        if (fcmToken) {
+          setToken(fcmToken);
+          console.log("FCM Token:", fcmToken);
+        }
+      } catch (err) {
+        console.error("Error retrieving FCM token:", err);
       }
     };
 
-    retrieveToken();
+    if ("serviceWorker" in navigator && "PushManager" in window) {
+      retrieveToken();
+    } else {
+      console.warn("Push messaging is not supported");
+    }
   }, []);
 
-  return { token, notificationPermissionStatus };
+  return { token, permissionStatus };
 };
 
 export default useFcmToken;

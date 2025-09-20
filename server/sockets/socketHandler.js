@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Message from '../models/Message.js'; // Import the Message model
+import { sendEmail } from '../services/emailService.js';
 
 // This Map will store the mapping of userId to socketId
 const onlineUsers = new Map();
@@ -60,6 +61,25 @@ const socketHandler = (io) => {
         
         // 3. Broadcast the new message to everyone in the specific task room
         io.to(taskId).emit('message_received', populatedMessage);
+         // 4. Check if the recipient is online
+         const recipientId = data.recipientId; // Assuming you send the recipient's ID
+         const recipientSocketId = onlineUsers.get(recipientId);
+ 
+         if (!recipientSocketId) {
+           // 5. If the recipient is offline, fetch their email and send a notification
+           try {
+             const recipient = await User.findById(recipientId);
+             if (recipient && recipient.email) {
+               await sendEmail({
+                 to: recipient.email,
+                 subject: 'New Message Received',
+                 text: `You have received a new message. Please log in to view it.`,
+               });
+             }
+           } catch (emailError) {
+             console.error('Error sending email:', emailError);
+           }
+         }
 
       } catch (error) {
         console.error('Error saving message or broadcasting:', error);

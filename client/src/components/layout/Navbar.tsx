@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/authContext';
 import { useNotifications } from '../../context/notificationContext'; // Import the new hook
+import { FaBell } from 'react-icons/fa'; 
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -23,7 +24,8 @@ const Navbar = () => {
           {user ? (
             <>
               <Link to="/notifications" className="relative py-2 px-3 hover:text-indigo-400">
-                <span>Notifications</span>
+                <FaBell size={20} />
+               
                 {unreadCount > 0 && (
                   <span className="absolute top-1 right-0 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                     {unreadCount}

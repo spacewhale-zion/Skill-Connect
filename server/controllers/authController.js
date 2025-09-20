@@ -15,7 +15,7 @@ const generateToken = (id) => {
  * @access  Public
  */
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, location, skills } = req.body;
+  const { name, email, password, location, skills, fcmToken } = req.body; // Add fcmToken here
 
   // Basic validation
   if (!name || !email || !password || !location || !location.coordinates) {
@@ -41,6 +41,7 @@ const registerUser = asyncHandler(async (req, res) => {
       type: 'Point',
       coordinates: location.coordinates, // Expecting [longitude, latitude]
     },
+    fcmToken, // Save the token to the new user document
   });
 
   if (user) {
@@ -49,10 +50,10 @@ const registerUser = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       skills: user.skills,
-      location: user.location,           // <-- ADD THIS
-      bio: user.bio,                     // <-- ADD THIS
-      averageRating: user.averageRating, // <-- ADD THIS
-      profilePicture: user.profilePicture, // <-- ADD THIS
+      location: user.location,
+      bio: user.bio,
+      averageRating: user.averageRating,
+      profilePicture: user.profilePicture,
       token: generateToken(user._id),
     });
   } else {
@@ -79,10 +80,10 @@ const loginUser = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       skills: user.skills,
-      location: user.location,           // <-- ADD THIS
-      bio: user.bio,                     // <-- ADD THIS
-      averageRating: user.averageRating, // <-- ADD THIS
-      profilePicture: user.profilePicture, // <-- ADD THIS
+      location: user.location,
+      bio: user.bio,
+      averageRating: user.averageRating,
+      profilePicture: user.profilePicture,
       token: generateToken(user._id),
     });
   } else {
@@ -106,10 +107,10 @@ const getUserProfile = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       skills: user.skills,
-      location: user.location,           // <-- ADD THIS
-      bio: user.bio,                     // <-- ADD THIS
-      averageRating: user.averageRating, // <-- ADD THIS
-      profilePicture: user.profilePicture, // <-- ADD THIS
+      location: user.location,
+      bio: user.bio,
+      averageRating: user.averageRating,
+      profilePicture: user.profilePicture,
       token: generateToken(user._id),
     });
   } else {

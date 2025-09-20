@@ -22,10 +22,11 @@ export interface AuthUser {
 export interface UserRegistrationData {
   name: string;
   email: string;
-  password?: string; // Optional if only for updating, required for registration
+  password: string;
   location: {
     coordinates: [number, number];
   };
+  fcmToken?: string; // Added fcmToken property
 }
 
 // Data needed for user login
@@ -139,5 +140,15 @@ export interface Notification {
   message: string;
   link: string;
   isRead: boolean;
+  createdAt: string;
+}
+
+export interface Review {
+  _id: string;
+  task: string;
+  reviewer: string;
+  reviewee: string;
+  rating: number;
+  comment?: string;
   createdAt: string;
 }

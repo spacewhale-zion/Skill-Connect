@@ -9,7 +9,7 @@ export default defineConfig({
     tailwindcss(),
   ],
    server: {
-    https: true, // 3. Enable HTTPS
-     port: 5173,
+    https: false, 
+     port: 3000,
   }
 })
