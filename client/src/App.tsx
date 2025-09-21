@@ -1,4 +1,5 @@
-import { Routes, Route, useState } from 'react-router-dom';
+import { Routes, Route, } from 'react-router-dom';
+import {useState} from 'react';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
@@ -10,8 +11,12 @@ import NotificationPermissionHandler from './components/notifications/Notificati
 import NotificationsPage from './pages/NotificationPage';
 import ChatWindow from './components/chat/ChatWindow';
 import type { AuthUser } from './types';
+import useFcmToken from './hooks/useFCMtoken';
 
 function App() {
+
+  const { token: fcmToken } = useFcmToken(); // inside App.tsx or a top-level component
+
   // Move state inside App component
   const [chatWindowData, setChatWindowData] = useState<{
     conversationId: string;

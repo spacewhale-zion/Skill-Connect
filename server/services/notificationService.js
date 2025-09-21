@@ -1,3 +1,4 @@
+// server/services/notificationService.js
 import admin from 'firebase-admin';
 
 /**
@@ -5,28 +6,33 @@ import admin from 'firebase-admin';
  * @param {string} token - The FCM registration token of the target device.
  * @param {string} title - The title of the notification.
  * @param {string} body - The body/message of the notification.
- * @param {object} [data={}] - An optional key-value payload to send with the notification.
+ * @param {object} [data={}] - Optional key-value payload.
  */
 const sendPushNotification = async (token, title, body, data = {}) => {
   if (!token) {
-    console.log('Attempted to send notification, but no FCM token was provided.');
+    console.log('No FCM token provided. Skipping notification.');
     return;
   }
 
   const message = {
-    token: token,
-    notification: {
-      title: title,
-      body: body,
-    },
-    data: data, // e.g., { taskId: '12345', type: 'NEW_BID' }
+    token,
+    notification: { title, body },
+    data: { ...data, timestamp: new Date().toISOString() },
   };
 
   try {
     const response = await admin.messaging().send(message);
-    console.log('Successfully sent message:', response);
+    console.log('✅ Push notification sent:', response);
   } catch (error) {
-    console.error('Error sending message:', error);
+    console.error('❌ Error sending push notification:', error);
+
+    // Handle invalid/stale token
+    if (
+      error.code === 'messaging/registration-token-not-registered' ||
+      error.code === 'messaging/invalid-argument'
+    ) {
+      throw new Error('Invalid FCM token');
+    }
   }
 };
 

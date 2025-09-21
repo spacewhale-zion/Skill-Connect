@@ -1,10 +1,10 @@
 import express from 'express';
+import { getChatHistory, markMessageAsRead } from '../controllers/chatController.js';
 import { protect } from '../middleware/authMiddleware.js';
-import { getChatHistory } from '../controllers/chatController.js';
 
 const router = express.Router();
 
-// @route /api/chats
-router.route('/:taskId').get(protect, getChatHistory);
+router.get('/:taskId', protect, getChatHistory);
+router.patch('/message/read/:messageId', protect, markMessageAsRead);
 
 export default router;

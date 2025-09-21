@@ -30,30 +30,26 @@ const NotificationsPage = ({ openChatWindow, activeChatId }: NotificationsPagePr
   }, [setNotifications]);
 
   const handleNotificationClick = async (notification: Notification) => {
-    if (!notification.isRead) {
-      try {
-        await markNotificationAsRead(notification._id);
-        setNotifications(prev =>
-          prev.map(n => n._id === notification._id ? { ...n, isRead: true } : n)
-        );
-        decrementUnreadCount();
-      } catch (error) {
-        console.error("Failed to mark notification as read");
-      }
-    }
+  if (!notification.isRead) {
+    await markNotificationAsRead(notification._id);
+    setNotifications((prev) =>
+      prev.map((n) => (n._id === notification._id ? { ...n, isRead: true } : n))
+    );
+    decrementUnreadCount();
+  }
 
-    if (notification.title === "New Chat Message" && notification.link) {
-      const conversationId = notification.link.split("/chat/")[1];
-      const recipientId = notification.link.split("/user/")[1] || ''; 
-      
-      // Only open chat if it's not already open
-      if (conversationId !== activeChatId) {
-        openChatWindow(conversationId, recipientId, notification.message);
-      }
-    } else {
-      navigate(notification.link);
+  // If it's a chat notification, open ChatWindow
+  if (notification.title === "New Chat Message" && notification.link) {
+    const taskId = notification.link.split("/tasks/")[1];
+    const recipientId = ""; // You can save recipientId in notification if needed
+    const recipientName = notification.message; // Temporary
+    if (taskId !== activeChatId) {
+      openChatWindow(taskId, recipientId, recipientName);
     }
-  };
+  } else {
+    navigate(notification.link);
+  }
+};
 
   if (loading) return <div>Loading notifications...</div>;
 

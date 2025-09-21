@@ -4,9 +4,9 @@ import Message from '../models/Message.js';
 import Task from '../models/Task.js';
 
 /**
- * @desc    Get chat history for a task
- * @route   GET /api/chats/:taskId
- * @access  Private
+ * @desc Get chat history for a task
+ * @route GET /api/chats/:taskId
+ * @access Private
  */
 const getChatHistory = asyncHandler(async (req, res) => {
   const { taskId } = req.params;
@@ -18,16 +18,13 @@ const getChatHistory = asyncHandler(async (req, res) => {
     throw new Error('Task not found');
   }
 
-  // Authorize: user must be the seeker or the assigned provider
   const isTaskSeeker = task.taskSeeker.equals(userId);
   const isProvider = task.assignedProvider && task.assignedProvider.equals(userId);
-
   if (!isTaskSeeker && !isProvider) {
     res.status(403);
     throw new Error('Not authorized to access this chat.');
   }
 
-  // Find or create a conversation for this task
   let conversation = await Conversation.findOne({ task: taskId });
   if (!conversation) {
     conversation = await Conversation.create({
@@ -43,4 +40,30 @@ const getChatHistory = asyncHandler(async (req, res) => {
   res.status(200).json({ conversationId: conversation._id, messages });
 });
 
-export { getChatHistory };
+/**
+ * @desc Mark a message as read
+ * @route PATCH /api/chats/message/read/:messageId
+ * @access Private
+ */
+const markMessageAsRead = asyncHandler(async (req, res) => {
+  const { messageId } = req.params;
+  const userId = req.user._id;
+
+  const message = await Message.findById(messageId);
+  if (!message) {
+    res.status(404);
+    throw new Error('Message not found');
+  }
+
+  if (message.recipient.toString() !== userId.toString()) {
+    res.status(403);
+    throw new Error('Not authorized to mark this message as read');
+  }
+
+  message.isRead = true;
+  await message.save();
+
+  res.json({ success: true, message });
+});
+
+export { getChatHistory, markMessageAsRead };
