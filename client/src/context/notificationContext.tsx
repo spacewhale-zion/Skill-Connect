@@ -9,6 +9,8 @@ interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
   setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
+  decrementUnreadCount: () => void; // <-- NEW: Function to decrement count
+   incrementUnreadCount: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -20,13 +22,11 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    // Establish socket connection when user logs in
     if (user && !socket) {
       const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       const newSocket = io(SERVER_URL, { auth: { token: user.token } });
       setSocket(newSocket);
     }
-    // Disconnect when user logs out
     if (!user && socket) {
       socket.disconnect();
       setSocket(null);
@@ -44,19 +44,27 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   }, [user]);
+   const incrementUnreadCount = () => {
+    setUnreadCount(prev => prev + 1);
+  };
+
+  const decrementUnreadCount = () => {
+    setUnreadCount(prev => (prev > 0 ? prev - 1 : 0));
+  };
 
   useEffect(() => {
     loadNotifications();
 
     if (socket) {
-      // Listen for new notifications from the server
       socket.on('new_notification', (newNotification: Notification) => {
+        // Prevent duplicate toasts for chat messages if chat window is open
+        if (newNotification.title !== 'New Chat Message') {
+           toast.success(`New notification: ${newNotification.title}`);
+        }
         setNotifications(prev => [newNotification, ...prev]);
         setUnreadCount(prev => prev + 1);
-        toast.success(`New notification: ${newNotification.title}`);
       });
 
-      // Cleanup listener on unmount
       return () => {
         socket.off('new_notification');
       };
@@ -64,7 +72,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   }, [socket, loadNotifications]);
 
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, setNotifications }}>
+    <NotificationContext.Provider value={{ notifications, unreadCount, setNotifications, decrementUnreadCount,incrementUnreadCount }}>
       {children}
     </NotificationContext.Provider>
   );

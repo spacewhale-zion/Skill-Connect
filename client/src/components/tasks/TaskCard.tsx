@@ -1,4 +1,4 @@
-import { Task } from '../../services/taskServices';
+import type {Task} from '../../types/index'
 import { Link } from 'react-router-dom';
 
 const statusColors: { [key: string]: string } = {

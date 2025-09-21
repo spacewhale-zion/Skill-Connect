@@ -10,7 +10,7 @@ import MapView from '../components/map/MapView';
 import PlaceBidForm from '../components/bids/PlaceBidsForm';
 import ChatWindow from '../components/chat/ChatWindow';
 import SubmitReviewModal from '../components/reviews/SubmitReviewmodal';
-import type { Bid, Task } from '../types/index';
+import type { AuthUser, Bid, Task } from '../types/index';
 
 const TaskDetailsPage = () => {
   const { taskId } = useParams<{ taskId: string }>();
@@ -58,7 +58,7 @@ const TaskDetailsPage = () => {
     try {
       await completeTask(taskId);
       toast.success('Task marked as complete!');
-      setIsReviewModalOpen(true); // Open review modal on success
+      setIsReviewModalOpen(true);
     } catch (error) {
       toast.error('Failed to mark task as complete.');
     }
@@ -66,7 +66,7 @@ const TaskDetailsPage = () => {
 
   const handleReviewSubmitted = () => {
     setIsReviewModalOpen(false);
-    fetchTaskData(); // Refresh task data to show it's completed
+    fetchTaskData();
   };
 
   if (loading) return <div>Loading...</div>;
@@ -74,7 +74,7 @@ const TaskDetailsPage = () => {
   
   const isOwner = user && user._id === task.taskSeeker._id;
   const isAssignedProvider = user && user._id === task.assignedProvider?._id;
-  const chatRecipient = isOwner ? task.assignedProvider : task.taskSeeker;
+  const chatRecipient = (isOwner ? task.assignedProvider : task.taskSeeker) as AuthUser | undefined;
   
   const mapCoordinates: [number, number] = [task.location.coordinates[1], task.location.coordinates[0]];
 
@@ -147,7 +147,7 @@ const TaskDetailsPage = () => {
       </div>
 
       {isChatOpen && chatRecipient && (
-        <ChatWindow taskId={task._id} recipientName={chatRecipient.name} onClose={() => setIsChatOpen(false)} />
+        <ChatWindow taskId={task._id} recipient={chatRecipient} onClose={() => setIsChatOpen(false)} />
       )}
 
       {isReviewModalOpen && task && task.assignedProvider && (

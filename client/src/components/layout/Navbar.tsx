@@ -6,7 +6,7 @@ import { FaBell } from 'react-icons/fa';
 const Navbar = () => {
   const { user, logout } = useAuth();
   const { unreadCount } = useNotifications(); // Get the unread count
-
+  console.log(unreadCount)
   return (
     <nav className="bg-gray-800 text-white shadow-lg">
       <div className="container mx-auto px-6 py-3 flex justify-between items-center">

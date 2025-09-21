@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react';
 import { fetchNotifications, markNotificationAsRead } from '../services/notificationServices';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import type { Notification  } from '../types';
+import { useNotifications } from '../context/notificationContext';
+import type { Notification } from '../types';
 
-const NotificationsPage = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+interface NotificationsPageProps {
+  openChatWindow: (conversationId: string, recipientId: string, recipientName: string) => void;
+  activeChatId?: string; // optional prop to know which chat is open
+}
+
+const NotificationsPage = ({ openChatWindow, activeChatId }: NotificationsPageProps) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { notifications, setNotifications, decrementUnreadCount } = useNotifications();
 
   useEffect(() => {
     const loadNotifications = async () => {
@@ -21,23 +27,32 @@ const NotificationsPage = () => {
       }
     };
     loadNotifications();
-  }, []);
+  }, [setNotifications]);
 
   const handleNotificationClick = async (notification: Notification) => {
-    // Mark as read on the backend
     if (!notification.isRead) {
       try {
         await markNotificationAsRead(notification._id);
-        // Update the state locally to reflect the change instantly
-        setNotifications(prev => 
+        setNotifications(prev =>
           prev.map(n => n._id === notification._id ? { ...n, isRead: true } : n)
         );
+        decrementUnreadCount();
       } catch (error) {
         console.error("Failed to mark notification as read");
       }
     }
-    // Navigate to the link
-    navigate(notification.link);
+
+    if (notification.title === "New Chat Message" && notification.link) {
+      const conversationId = notification.link.split("/chat/")[1];
+      const recipientId = notification.link.split("/user/")[1] || ''; 
+      
+      // Only open chat if it's not already open
+      if (conversationId !== activeChatId) {
+        openChatWindow(conversationId, recipientId, notification.message);
+      }
+    } else {
+      navigate(notification.link);
+    }
   };
 
   if (loading) return <div>Loading notifications...</div>;
@@ -49,7 +64,7 @@ const NotificationsPage = () => {
         {notifications.length > 0 ? (
           <ul className="divide-y divide-gray-200">
             {notifications.map(notification => (
-              <li 
+              <li
                 key={notification._id}
                 onClick={() => handleNotificationClick(notification)}
                 className={`p-4 hover:bg-gray-50 cursor-pointer ${!notification.isRead ? 'bg-indigo-50' : ''}`}
