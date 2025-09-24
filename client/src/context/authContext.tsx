@@ -68,6 +68,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // The axios interceptor will see no user and won't add the header
   };
 
+  
+
   return (
     <AuthContext.Provider value={{ user, login, register, logout, updateUser, isLoading }}>
       {/* We render children even while loading to prevent flashes of unstyled content */}

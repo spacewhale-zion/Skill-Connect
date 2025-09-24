@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 
 const NotificationPermissionHandler = () => {
   const { user } = useAuth();
-  const { token, notificationPermissionStatus } = useFcmToken();
+  const { token, permissionStatus: notificationPermissionStatus } = useFcmToken();
 
   useEffect(() => {
     if (token && user) {

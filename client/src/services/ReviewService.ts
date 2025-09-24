@@ -1,9 +1,14 @@
 import api from '../api/axiosConfig';
-import { Review } from '../types';
+import { Review, AuthUser } from '../types';
 
 export interface ReviewCreationData {
   rating: number;
   comment?: string;
+}
+
+export interface CreateReviewResponse {
+    review: Review;
+    updatedReviewee: AuthUser;
 }
 
 /**
@@ -12,7 +17,7 @@ export interface ReviewCreationData {
  * @param taskId - The ID of the task being reviewed.
  * @param reviewData - The rating and optional comment.
  */
-export const createReview = async (taskId: string, reviewData: ReviewCreationData): Promise<Review> => {
+export const createReview = async (taskId: string, reviewData: ReviewCreationData): Promise<CreateReviewResponse> => {
   const { data } = await api.post(`/tasks/${taskId}/review`, reviewData);
   return data;
 };

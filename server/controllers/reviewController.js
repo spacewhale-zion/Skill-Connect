@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import Review from '../models/Review.js';
 import Task from '../models/Task.js';
+import User from '../models/User.js';
 
 /**
  * @desc    Create a new review for a completed task
@@ -66,9 +67,10 @@ const createReview = asyncHandler(async (req, res) => {
     comment,
   });
 
-  // The 'post' middleware on the Review model will automatically update the user's average rating.
+    const updatedReviewee = await User.findById(revieweeId).select('-password');
 
-  res.status(201).json(review);
+
+  res.status(201).json({ review, updatedReviewee });
 });
 
 export { createReview };

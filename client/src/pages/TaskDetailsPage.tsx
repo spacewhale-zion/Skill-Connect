@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useAuth } from '../context/authContext';
-import { getTaskById,  assignTask, completeTask } from '../services/taskServices';
-import { getBidsForTask } from '../services/bidServices';
+import { useAuth } from '../context/authContext.tsx';
+import { getTaskById,  assignTask, completeTask } from '../services/taskServices.ts';
+import { getBidsForTask } from '../services/bidServices.ts';
+import { getMyProfile } from '../services/authServices.ts';
 import toast from 'react-hot-toast';
-import Navbar from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
-import MapView from '../components/map/MapView';
-import PlaceBidForm from '../components/bids/PlaceBidsForm';
-import ChatWindow from '../components/chat/ChatWindow';
-import SubmitReviewModal from '../components/reviews/SubmitReviewmodal';
-import type { AuthUser, Bid, Task } from '../types/index';
+import Navbar from '../components/layout/Navbar.tsx';
+import Footer from '../components/layout/Footer.tsx';
+import MapView from '../components/map/MapView.tsx';
+import PlaceBidForm from '../components/bids/PlaceBidsForm.tsx';
+import ChatWindow from '../components/chat/ChatWindow.tsx';
+import SubmitReviewModal from '../components/reviews/SubmitReviewmodal.tsx';
+import type { AuthUser, Bid, Task } from '../types/index.ts';
 
 const TaskDetailsPage = () => {
   const { taskId } = useParams<{ taskId: string }>();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [task, setTask] = useState<Task | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +41,7 @@ const TaskDetailsPage = () => {
 
   useEffect(() => {
     fetchTaskData();
-  }, [taskId, user]);
+  }, [taskId, user?._id]);
 
   const handleAcceptBid = async (providerId: string, bidId: string) => {
     if (!taskId) return;
@@ -64,9 +65,17 @@ const TaskDetailsPage = () => {
     }
   };
 
-  const handleReviewSubmitted = () => {
+  const handleReviewSubmitted = async () => {
     setIsReviewModalOpen(false);
-    fetchTaskData();
+    await fetchTaskData();
+
+    try {
+      const updatedProfile = await getMyProfile();
+      updateUser(updatedProfile);
+      toast.success("Your profile rating has been updated!");
+    } catch (error) {
+      console.error("Failed to refresh user profile after review.", error);
+    }
   };
 
   if (loading) return <div>Loading...</div>;
@@ -150,13 +159,13 @@ const TaskDetailsPage = () => {
         <ChatWindow taskId={task._id} recipient={chatRecipient} onClose={() => setIsChatOpen(false)} />
       )}
 
-      {isReviewModalOpen && task && task.assignedProvider && (
+      {isReviewModalOpen && task && (isOwner ? task.assignedProvider : task.taskSeeker) && (
         <SubmitReviewModal
           isOpen={isReviewModalOpen}
           onClose={() => setIsReviewModalOpen(false)}
           onReviewSubmitted={handleReviewSubmitted}
           taskId={task._id}
-          revieweeName={task.assignedProvider.name}
+          revieweeName={isOwner ? task.assignedProvider!.name : task.taskSeeker.name}
         />
       )}
 
@@ -166,3 +175,4 @@ const TaskDetailsPage = () => {
 };
 
 export default TaskDetailsPage;
+

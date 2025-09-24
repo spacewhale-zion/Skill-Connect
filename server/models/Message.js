@@ -11,9 +11,18 @@ const messageSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  recipient: { // optional but needed for read/unread
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   text: {
     type: String,
     required: true,
+  },
+  isRead: {
+    type: Boolean,
+    default: false,
   },
 }, { timestamps: true });
 

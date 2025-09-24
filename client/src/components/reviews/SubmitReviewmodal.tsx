@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { createReview } from '../../services/ReviewService';
+import { AuthUser } from '../../types';
 
 interface SubmitReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onReviewSubmitted: () => void;
+  onReviewSubmitted: (updatedReviewee: AuthUser) => void;
   taskId: string;
   revieweeName: string;
 }
@@ -40,9 +41,9 @@ const SubmitReviewModal = ({ isOpen, onClose, onReviewSubmitted, taskId, reviewe
     }
     setIsSubmitting(true);
     try {
-      await createReview(taskId, { rating, comment });
+      const { updatedReviewee } = await createReview(taskId, { rating, comment });
       toast.success('Review submitted successfully!');
-      onReviewSubmitted();
+      onReviewSubmitted(updatedReviewee);
       onClose();
     } catch (error) {
       toast.error('Failed to submit review. You may have already reviewed this task.');
