@@ -109,7 +109,14 @@ const getTasks = asyncHandler(async (req, res) => {
 const getTaskById = asyncHandler(async (req, res) => {
   const task = await Task.findById(req.params.id)
     .populate('taskSeeker', 'name profilePicture averageRating')
-    .populate('assignedProvider', 'name profilePicture averageRating');
+    .populate('assignedProvider', 'name profilePicture averageRating')
+    .populate({ // Populate reviews and the reviewer's details
+      path: 'reviews',
+      populate: {
+        path: 'reviewer',
+        select: 'name profilePicture'
+      }
+    });
 
   if (!task) {
     res.status(404);
@@ -118,7 +125,6 @@ const getTaskById = asyncHandler(async (req, res) => {
 
   res.status(200).json(task);
 });
-
 /**
  * @desc    Assign a provider to a task
  * @route   PUT /api/tasks/:id/assign
@@ -257,22 +263,17 @@ const completeTask = asyncHandler(async (req, res) => {
 });
 
 
-//  * @access  Private
-//  */
 const getMyPostedTasks = asyncHandler(async (req, res) => {
-  // Find all tasks where the taskSeeker matches the logged-in user's ID
-  const tasks = await Task.find({ taskSeeker: req.user._id }).sort({ createdAt: -1 });
+  const tasks = await Task.find({ taskSeeker: req.user._id })
+    .populate('reviews')
+    .sort({ createdAt: -1 });
   res.status(200).json(tasks);
 });
 
-/**
- * @desc    Get tasks assigned to the logged-in user
- * @route   GET /api/tasks/assignedtome
- * @access  Private
- */
 const getMyAssignedTasks = asyncHandler(async (req, res) => {
-  // Find all tasks where the assignedProvider matches the logged-in user's ID
-  const tasks = await Task.find({ assignedProvider: req.user._id }).sort({ createdAt: -1 });
+  const tasks = await Task.find({ assignedProvider: req.user._id })
+    .populate('reviews')
+    .sort({ createdAt: -1 });
   res.status(200).json(tasks);
 });
 

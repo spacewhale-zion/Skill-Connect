@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/authContext.tsx';
 import { getTaskById,  assignTask, completeTask } from '../services/taskServices.ts';
 import { getBidsForTask } from '../services/bidServices.ts';
-import { getMyProfile } from '../services/authServices.ts';
 import toast from 'react-hot-toast';
 import Navbar from '../components/layout/Navbar.tsx';
 import Footer from '../components/layout/Footer.tsx';
@@ -11,7 +10,7 @@ import MapView from '../components/map/MapView.tsx';
 import PlaceBidForm from '../components/bids/PlaceBidsForm.tsx';
 import ChatWindow from '../components/chat/ChatWindow.tsx';
 import SubmitReviewModal from '../components/reviews/SubmitReviewmodal.tsx';
-import type { AuthUser, Bid, Task } from '../types/index.ts';
+import type { AuthUser, Bid, Task, Reviewer } from '../types/index.ts';
 
 const TaskDetailsPage = () => {
   const { taskId } = useParams<{ taskId: string }>();
@@ -57,7 +56,8 @@ const TaskDetailsPage = () => {
   const handleCompleteTask = async () => {
     if (!taskId) return;
     try {
-      await completeTask(taskId);
+      const updatedTask = await completeTask(taskId);
+      setTask(updatedTask); // This is the fix
       toast.success('Task marked as complete!');
       setIsReviewModalOpen(true);
     } catch (error) {
@@ -65,17 +65,34 @@ const TaskDetailsPage = () => {
     }
   };
 
-  const handleReviewSubmitted = async () => {
+  const handleReviewSubmitted = (updatedReviewee: AuthUser) => {
     setIsReviewModalOpen(false);
-    await fetchTaskData();
+    
+    setTask(prevTask => {
+      if (!prevTask) return null;
 
-    try {
-      const updatedProfile = await getMyProfile();
-      updateUser(updatedProfile);
-      toast.success("Your profile rating has been updated!");
-    } catch (error) {
-      console.error("Failed to refresh user profile after review.", error);
+      const newAssignedProvider =
+        prevTask.assignedProvider?._id === updatedReviewee._id
+          ? { ...prevTask.assignedProvider, averageRating: updatedReviewee.averageRating }
+          : prevTask.assignedProvider;
+
+      const newTaskSeeker =
+        prevTask.taskSeeker._id === updatedReviewee._id
+          ? { ...prevTask.taskSeeker, averageRating: updatedReviewee.averageRating }
+          : prevTask.taskSeeker;
+
+      return {
+        ...prevTask,
+        assignedProvider: newAssignedProvider,
+        taskSeeker: newTaskSeeker,
+      };
+    });
+
+    if (user && user._id === updatedReviewee._id) {
+      updateUser({ averageRating: updatedReviewee.averageRating });
+      toast.success("Your new average rating is updated!");
     }
+    fetchTaskData();
   };
 
   if (loading) return <div>Loading...</div>;
@@ -105,6 +122,30 @@ const TaskDetailsPage = () => {
               
               <h3 className="text-xl font-semibold text-gray-700 mt-8 mb-4">Location</h3>
               <MapView coordinates={mapCoordinates} />
+              
+              {task.status === 'Completed' && task.reviews && task.reviews.length > 0 && (
+                <div className="mt-8">
+                  <h2 className="text-2xl font-semibold text-gray-700 mb-4">Reviews</h2>
+                  <div className="space-y-4">
+                    {task.reviews.map(review => (
+                      <div key={review._id} className="bg-gray-50 p-4 rounded-lg">
+                        <div className="flex items-center mb-2">
+                          <img 
+                            src={review.reviewer.profilePicture || `https://ui-avatars.com/api/?name=${review.reviewer.name}&background=random&size=128`} 
+                            alt={review.reviewer.name}
+                            className="w-10 h-10 rounded-full mr-3"
+                          />
+                          <div>
+                            <p className="font-bold">{review.reviewer.name}</p>
+                            <p className="text-yellow-500">{'⭐'.repeat(review.rating)}</p>
+                          </div>
+                        </div>
+                        <p className="text-gray-600">{review.comment}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="lg:col-span-1">
@@ -175,4 +216,3 @@ const TaskDetailsPage = () => {
 };
 
 export default TaskDetailsPage;
-

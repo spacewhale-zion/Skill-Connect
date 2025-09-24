@@ -3,6 +3,7 @@ import  { createContext, useContext, useState, useEffect, ReactNode } from 'reac
 import { loginUser, registerUser } from '../services/authServices';
 import { AuthUser, UserCredentials, UserRegistrationData } from '../types';
 import api from '../api/axiosConfig';
+import { getMyProfile } from '../services/authServices';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -19,15 +20,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const userData: AuthUser = JSON.parse(storedUser);
-      setUser(userData);
-    }
-    console.log(storedUser)
-    // Set loading to false after attempting to load user
-    setIsLoading(false);
+   useEffect(() => {
+    const loadUser = async () => {
+      const storedUserString = localStorage.getItem('user');
+      if (storedUserString) {
+        try {
+          // Re-fetch the user's profile to get the latest data
+          const freshUser = await getMyProfile();
+          setUser(freshUser);
+          localStorage.setItem('user', JSON.stringify(freshUser));
+        } catch (error) {
+          console.error("Session expired or invalid, logging out.", error);
+          // If the token is invalid or expired, log the user out
+          logout();
+        }
+      }
+      setIsLoading(false);
+    };
+
+    loadUser();
   }, []);
 
   const handleAuth = async (authPromise: Promise<AuthUser>) => {

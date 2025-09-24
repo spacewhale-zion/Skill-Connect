@@ -46,6 +46,10 @@ const taskSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+     reviews: [{ // Add this field
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Review'
+    }],
     completedAt: {
       type: Date,
     },

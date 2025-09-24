@@ -53,7 +53,8 @@ const SubmitReviewModal = ({ isOpen, onClose, onReviewSubmitted, taskId, reviewe
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center">
+<div className="fixed inset-0 bg-transparent z-50 flex justify-center items-center">
+
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-gray-800">Rate Your Experience</h2>

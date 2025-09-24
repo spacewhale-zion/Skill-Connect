@@ -1,4 +1,4 @@
-import type {Task} from '../../types/index'
+import type { Task } from '../../types/index';
 import { Link } from 'react-router-dom';
 
 const statusColors: { [key: string]: string } = {
@@ -8,6 +8,11 @@ const statusColors: { [key: string]: string } = {
 };
 
 const TaskCard = ({ task }: { task: Task }) => {
+  // Calculate average rating if the task is completed and has reviews
+  const averageRating = task.status === 'Completed' && task.reviews && task.reviews.length > 0
+    ? task.reviews.reduce((acc, review) => acc + review.rating, 0) / task.reviews.length
+    : null;
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
       <div className="flex justify-between items-start">
@@ -18,6 +23,14 @@ const TaskCard = ({ task }: { task: Task }) => {
       </div>
       <p className="text-sm text-gray-500 mt-2">{task.category}</p>
       <p className="text-lg font-bold text-indigo-600 mt-4">₹{task.budget.amount}</p>
+      
+      {averageRating && (
+        <div className="mt-4">
+          <p className="text-sm text-gray-500">Completed with rating:</p>
+          <p className="text-lg font-bold text-yellow-500">⭐ {averageRating.toFixed(1)}</p>
+        </div>
+      )}
+
       <div className="mt-6">
         <Link 
           to={`/tasks/${task._id}`} 

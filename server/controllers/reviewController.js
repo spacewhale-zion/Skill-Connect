@@ -66,8 +66,10 @@ const createReview = asyncHandler(async (req, res) => {
     rating,
     comment,
   });
-
-    const updatedReviewee = await User.findById(revieweeId).select('-password');
+    
+  task.reviews.push(review._id);
+  await task.save();
+  const updatedReviewee = await User.findById(revieweeId).select('-password');
 
 
   res.status(201).json({ review, updatedReviewee });

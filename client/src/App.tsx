@@ -12,6 +12,8 @@ import NotificationsPage from './pages/NotificationPage';
 import ChatWindow from './components/chat/ChatWindow';
 import type { AuthUser } from './types';
 import useFcmToken from './hooks/useFCMtoken';
+import AllMyTasksPage from './pages/Allmytask';
+import AllMyAssignedTasksPage from './pages/AllmyAssignedtask';
 
 function App() {
 
@@ -55,6 +57,9 @@ function App() {
           element={<NotificationsPage openChatWindow={openChatWindow}
            activeChatId={chatWindowData?.conversationId} />} // pass the prop here
         />
+        <Route path="/my-posted-tasks" element={<AllMyTasksPage />} />
+        <Route path="/my-assigned-tasks" element={<AllMyAssignedTasksPage />} />
+
       </Routes>
     </>
   );

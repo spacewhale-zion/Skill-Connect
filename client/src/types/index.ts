@@ -61,7 +61,21 @@ export interface Bid {
 }
 
 
+export interface Reviewer {
+  _id: string;
+  name: string;
+  profilePicture?: string;
+}
 
+export interface Review {
+  _id: string;
+  task: string;
+  reviewer: Reviewer; // Changed from string
+  reviewee: string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+}
 
 export interface Task {
   _id: string;
@@ -73,6 +87,7 @@ export interface Task {
     amount: number;
     currency: string;
   };
+  reviews?: Review[];
   location: {
     type: 'Point';
     coordinates: [number, number]; // [longitude, latitude]
@@ -143,12 +158,3 @@ export interface Notification {
   createdAt: string;
 }
 
-export interface Review {
-  _id: string;
-  task: string;
-  reviewer: string;
-  reviewee: string;
-  rating: number;
-  comment?: string;
-  createdAt: string;
-}
