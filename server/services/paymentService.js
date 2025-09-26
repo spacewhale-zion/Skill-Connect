@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Initialize Stripe instance
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 /**
  * Creates a Stripe Payment Intent.
@@ -18,7 +18,7 @@ const createPaymentIntent = async (amount) => {
   try {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountInPaise,
-      currency: 'inr', // or 'usd', 'eur', etc.
+      currency: 'usd', // or 'usd', 'eur', etc.
       automatic_payment_methods: {
         enabled: true,
       },
@@ -50,4 +50,4 @@ const verifyWebhook = (body, signature) => {
   }
 };
 
-export { createPaymentIntent, verifyWebhook };
+export { createPaymentIntent, verifyWebhook, stripe };

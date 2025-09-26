@@ -1,27 +1,12 @@
 import asyncHandler from 'express-async-handler';
-import { createPaymentIntent, verifyWebhook } from '../services/paymentService.js';
+import { verifyWebhook } from '../services/paymentService.js';
 import Task from '../models/Task.js';
+import User from '../models/User.js';
+import Notification from '../models/Notification.js';
+import { io } from '../server.js';
+import { onlineUsers } from '../sockets/socketHandler.js';
+import { sendPushNotification } from '../services/notificationService.js';
 
-/**
- * @desc    Create a Stripe Payment Intent for a task
- * @route   POST /api/payments/create-payment-intent
- * @access  Private
- */
-const createStripePaymentIntent = asyncHandler(async (req, res) => {
-  const { taskId } = req.body;
-  const task = await Task.findById(taskId);
-  if (!task) {
-    res.status(404);
-    throw new Error('Task not found');
-  }
-
-  const paymentIntent = await createPaymentIntent(task.budget.amount);
-
-  // Send the client_secret to the frontend to process the payment
-  res.status(201).json({
-    clientSecret: paymentIntent.client_secret,
-  });
-});
 
 /**
  * @desc    Handle incoming webhooks from Stripe
@@ -38,12 +23,41 @@ const stripeWebhookHandler = asyncHandler(async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // Handle the event
+  // Handle the payment_intent.succeeded event
   if (event.type === 'payment_intent.succeeded') {
     const paymentIntent = event.data.object;
     console.log('✅ PaymentIntent was successful!', paymentIntent.id);
-    // Here, find the associated task in your DB and update its status to 'Paid'.
-    // You'd typically store the paymentIntent.id when it's created.
+
+    // Find the associated task in your DB and update its status
+    const task = await Task.findOne({ paymentIntentId: paymentIntent.id });
+
+    if (task) {
+      task.paid = true;
+      task.status = 'Assigned';
+      await task.save();
+
+      // Notify the provider that the task is funded and officially assigned
+       const notificationTitle = 'Payment confirmed!';
+       const notificationBody = `Payment for "${task.title}" has been confirmed. You can start working now.`;
+       
+       const notification = await Notification.create({
+         user: task.assignedProvider,
+         title: notificationTitle,
+         message: notificationBody,
+         link: `/tasks/${task._id}`
+       });
+
+       const recipientSocketId = onlineUsers.get(task.assignedProvider.toString());
+
+       if (recipientSocketId) {
+         io.to(recipientSocketId).emit('new_notification', notification);
+       } else {
+         const provider = await User.findById(task.assignedProvider);
+         if (provider && provider.fcmToken) {
+           await sendPushNotification(provider.fcmToken, notificationTitle, notificationBody, { taskId: task._id.toString(), type: 'PAYMENT_CONFIRMED' });
+         }
+       }
+    }
   } else {
     console.log(`Unhandled event type ${event.type}`);
   }
@@ -52,4 +66,4 @@ const stripeWebhookHandler = asyncHandler(async (req, res) => {
   res.status(200).json({ received: true });
 });
 
-export { createStripePaymentIntent, stripeWebhookHandler };
+export { stripeWebhookHandler };

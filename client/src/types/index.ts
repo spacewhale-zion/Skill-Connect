@@ -58,6 +58,7 @@ export interface Bid {
     averageRating: number;
   };
   createdAt: string;
+    status: 'Pending' | 'Accepted' | 'Rejected';
 }
 
 
@@ -81,7 +82,7 @@ export interface Task {
   _id: string;
   title: string;
   description: string;
-  status: 'Open' | 'Assigned' | 'Completed' | 'Cancelled';
+  status: 'Open' | 'Assigned' | 'Completed' | 'Cancelled'| 'Pending Payment';
   category: string;
   budget: {
     amount: number;

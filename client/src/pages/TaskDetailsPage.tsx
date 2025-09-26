@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/authContext.tsx';
-import { getTaskById,  assignTask, completeTask } from '../services/taskServices.ts';
+import { getTaskById, assignTask, completeTask, getTaskPaymentDetails } from '../services/taskServices.ts';
 import { getBidsForTask } from '../services/bidServices.ts';
 import toast from 'react-hot-toast';
 import Navbar from '../components/layout/Navbar.tsx';
@@ -10,7 +10,8 @@ import MapView from '../components/map/MapView.tsx';
 import PlaceBidForm from '../components/bids/PlaceBidsForm.tsx';
 import ChatWindow from '../components/chat/ChatWindow.tsx';
 import SubmitReviewModal from '../components/reviews/SubmitReviewmodal.tsx';
-import type { AuthUser, Bid, Task, Reviewer } from '../types/index.ts';
+import PaymentModal from '../components/payment/PaymentModal.tsx';
+import type { AuthUser, Bid, Task } from '../types/index.ts';
 
 const TaskDetailsPage = () => {
   const { taskId } = useParams<{ taskId: string }>();
@@ -20,6 +21,8 @@ const TaskDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [clientSecret, setClientSecret] = useState('');
 
   const fetchTaskData = async () => {
     if (!taskId) return;
@@ -27,7 +30,9 @@ const TaskDetailsPage = () => {
       setLoading(true);
       const taskData = await getTaskById(taskId);
       setTask(taskData);
-      if (user && user._id === taskData.taskSeeker._id) {
+      // --- THIS IS THE FIX ---
+      // Fetch bids if the task is either Open OR Pending Payment
+      if (user && user._id === taskData.taskSeeker._id && (taskData.status === 'Open' || taskData.status === 'Pending Payment')) {
         const bidsData = await getBidsForTask(taskId);
         setBids(bidsData);
       }
@@ -45,19 +50,41 @@ const TaskDetailsPage = () => {
   const handleAcceptBid = async (providerId: string, bidId: string) => {
     if (!taskId) return;
     try {
-      await assignTask(taskId, providerId, bidId);
-      toast.success('Bid accepted! The provider has been notified.');
-      fetchTaskData();
+      const response = await assignTask(taskId, providerId, bidId);
+      if (response.clientSecret) {
+        setClientSecret(response.clientSecret);
+        setIsPaymentModalOpen(true);
+        toast.success('Bid accepted! Please complete the payment.');
+        // We call fetchTaskData() after payment success now
+      }
     } catch (error) {
       toast.error('Failed to accept bid.');
     }
   };
-  
+
+  const handleResumePayment = async () => {
+    if (!taskId) return;
+    try {
+      const { clientSecret } = await getTaskPaymentDetails(taskId);
+      setClientSecret(clientSecret);
+      setIsPaymentModalOpen(true);
+    } catch (error) {
+      toast.error('Could not retrieve payment details. Please try again.');
+      console.error(error);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    setIsPaymentModalOpen(false);
+    toast.success('Payment successful! The task is now assigned.');
+    fetchTaskData(); // Refresh task data to show the 'Assigned' status
+  };
+
   const handleCompleteTask = async () => {
     if (!taskId) return;
     try {
       const updatedTask = await completeTask(taskId);
-      setTask(updatedTask); // This is the fix
+      setTask(updatedTask);
       toast.success('Task marked as complete!');
       setIsReviewModalOpen(true);
     } catch (error) {
@@ -65,7 +92,7 @@ const TaskDetailsPage = () => {
     }
   };
 
-  const handleReviewSubmitted = (updatedReviewee: AuthUser) => {
+    const handleReviewSubmitted = (updatedReviewee: AuthUser) => {
     setIsReviewModalOpen(false);
     
     setTask(prevTask => {
@@ -97,11 +124,10 @@ const TaskDetailsPage = () => {
 
   if (loading) return <div>Loading...</div>;
   if (!task) return <div>Task not found.</div>;
-  
+
   const isOwner = user && user._id === task.taskSeeker._id;
   const isAssignedProvider = user && user._id === task.assignedProvider?._id;
   const chatRecipient = (isOwner ? task.assignedProvider : task.taskSeeker) as AuthUser | undefined;
-  
   const mapCoordinates: [number, number] = [task.location.coordinates[1], task.location.coordinates[0]];
 
   return (
@@ -119,10 +145,10 @@ const TaskDetailsPage = () => {
             <div className="lg:col-span-2">
               <h2 className="text-2xl font-semibold text-gray-700 mb-4">Task Details</h2>
               <p className="text-gray-600 leading-relaxed">{task.description}</p>
-              
+
               <h3 className="text-xl font-semibold text-gray-700 mt-8 mb-4">Location</h3>
               <MapView coordinates={mapCoordinates} />
-              
+
               {task.status === 'Completed' && task.reviews && task.reviews.length > 0 && (
                 <div className="mt-8">
                   <h2 className="text-2xl font-semibold text-gray-700 mb-4">Reviews</h2>
@@ -130,8 +156,8 @@ const TaskDetailsPage = () => {
                     {task.reviews.map(review => (
                       <div key={review._id} className="bg-gray-50 p-4 rounded-lg">
                         <div className="flex items-center mb-2">
-                          <img 
-                            src={review.reviewer.profilePicture || `https://ui-avatars.com/api/?name=${review.reviewer.name}&background=random&size=128`} 
+                          <img
+                            src={review.reviewer.profilePicture || `https://ui-avatars.com/api/?name=${review.reviewer.name}&background=random&size=128`}
                             alt={review.reviewer.name}
                             className="w-10 h-10 rounded-full mr-3"
                           />
@@ -159,6 +185,22 @@ const TaskDetailsPage = () => {
                   <p className="text-3xl font-extrabold text-indigo-600">₹{task.budget.amount}</p>
                 </div>
               </div>
+              
+              {user && isOwner && task.status === 'Pending Payment' && (
+                <div className="mt-6 bg-yellow-50 border border-yellow-300 p-4 rounded-lg text-center">
+                  <h3 className="text-lg font-bold text-yellow-800">Action Required</h3>
+                  <p className="text-yellow-700 mt-2 text-sm">
+                    This task is awaiting payment to be assigned to{' '}
+                    <strong className="block mt-1">{bids.find(b => b.status === 'Accepted')?.provider.name || 'the provider'}</strong>.
+                  </p>
+                  <button
+                    onClick={handleResumePayment}
+                    className="w-full mt-4 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700"
+                  >
+                    Pay Now to Assign
+                  </button>
+                </div>
+              )}
 
               {user && isOwner && task.status === 'Open' && (
                 <div className="mt-6">
@@ -209,6 +251,13 @@ const TaskDetailsPage = () => {
           revieweeName={isOwner ? task.assignedProvider!.name : task.taskSeeker.name}
         />
       )}
+      
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        clientSecret={clientSecret}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
 
       <Footer />
     </div>

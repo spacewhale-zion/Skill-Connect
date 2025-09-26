@@ -1,17 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/authContext';
-import { updateUserProfile } from '../services/userServices';
+import { updateUserProfile, createStripeOnboardingLink } from '../services/userServices';
 import toast from 'react-hot-toast';
 import { ProfileUpdateData } from '../types';
-import MapView from '../components/map/MapView'; // Assuming you have this component
-interface ProfilePageProps {
-  isModalOpen: boolean; // <-- NEW PROP
-}
+import MapView from '../components/map/MapView';
 
 const ProfilePage = () => {
   const { user, updateUser, isLoading } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isOnboarding, setIsOnboarding] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -34,7 +32,7 @@ const ProfilePage = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
-  
+
   const handleCancelEdit = () => {
     // Reset form to original user data and exit edit mode
     if (user) {
@@ -69,6 +67,18 @@ const ProfilePage = () => {
     }
   };
 
+  const handleStripeOnboarding = async () => {
+    setIsOnboarding(true);
+    try {
+      const { url } = await createStripeOnboardingLink();
+      // Redirect the user to Stripe's onboarding page
+      window.location.href = url;
+    } catch (error) {
+      toast.error('Could not create onboarding link. Please try again.');
+      setIsOnboarding(false);
+    }
+  };
+
   if (isLoading || !user) {
     return <div className="text-center py-10">Loading profile...</div>;
   }
@@ -84,9 +94,9 @@ const ProfilePage = () => {
       <div className="flex flex-col md:flex-row items-center gap-6 border-b pb-6 mb-6">
         <div className="w-32 h-32 rounded-full bg-gray-200 flex-shrink-0">
           {/* Placeholder for an actual image */}
-          <img 
-            src={user.profilePicture || `https://ui-avatars.com/api/?name=${user.name}&background=random&size=128`} 
-            alt="Profile" 
+          <img
+            src={user.profilePicture || `https://ui-avatars.com/api/?name=${user.name}&background=random&size=128`}
+            alt="Profile"
             className="w-full h-full object-cover rounded-full"
           />
         </div>
@@ -109,6 +119,21 @@ const ProfilePage = () => {
               </div>
             )}
         </div>
+      </div>
+      
+      {/* --- PAYOUTS SETUP SECTION --- */}
+      <div className="my-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-800">Payouts Setup</h3>
+        <p className="text-sm text-gray-600 mt-1">
+          Connect your bank account via our secure payment partner, Stripe, to receive payments for completed tasks.
+        </p>
+        <button
+          onClick={handleStripeOnboarding}
+          disabled={isOnboarding}
+          className="mt-4 px-5 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition duration-200 disabled:bg-blue-400"
+        >
+          {isOnboarding ? 'Redirecting...' : 'Set Up Payouts'}
+        </button>
       </div>
 
       {/* --- PROFILE DETAILS FORM --- */}

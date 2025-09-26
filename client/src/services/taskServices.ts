@@ -47,11 +47,19 @@ export const getTasks = async (params: TaskSearchParams): Promise<Task[]> => {
  * @param providerId - The ID of the user being assigned.
  * @param bidId - The ID of the accepted bid.
  */
-export const assignTask = async (taskId: string, providerId: string, bidId: string): Promise<Task> => {
+export const assignTask = async (
+  taskId: string,
+  providerId: string,
+  bidId: string
+): Promise<{ clientSecret: string; task: Task }> => {
   const { data } = await api.put(`/tasks/${taskId}/assign`, { providerId, bidId });
+  // Assuming backend response is { clientSecret, task }
   return data;
 };
-
+export const getTaskPaymentDetails = async (taskId: string): Promise<{ clientSecret: string }> => {
+  const { data } = await api.get(`/tasks/${taskId}/payment-details`);
+  return data;
+};
 /**
  * Marks a task as complete.
  * Corresponds to: PUT /api/tasks/:id/complete

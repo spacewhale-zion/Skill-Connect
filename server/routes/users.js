@@ -5,7 +5,8 @@ import { protect } from '../middleware/authMiddleware.js';
 import {
   getUserById,
   updateUserProfile,
-  saveFcmToken
+  saveFcmToken,
+  createStripeOnboardingLink
 } from '../controllers/userController.js';
 
 const router = express.Router();
@@ -15,5 +16,7 @@ const router = express.Router();
 router.route('/profile').put(protect, updateUserProfile); // Update logged-in user's profile
 router.route('/:id').get(getUserById); // Get public profile of any user
 router.route('/fcm-token').post(protect, saveFcmToken);
+router.route('/stripe-onboarding').post(protect, createStripeOnboardingLink); 
+
 
 export default router;

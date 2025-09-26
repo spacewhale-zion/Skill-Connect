@@ -12,6 +12,7 @@ import {
   completeTask,
   getMyPostedTasks,
   getMyAssignedTasks,
+  getPaymentDetailsForTask,
 } from '../controllers/taskController.js';
 
 import { createBid, getBidsForTask } from '../controllers/bidController.js';
@@ -31,6 +32,8 @@ router.route('/')
 
 router.route('/:id')
   .get(getTaskById); // Anyone can view a single task
+
+router.route('/:id/payment-details').get(protect, getPaymentDetailsForTask);
 
 // --- Task Lifecycle Routes ---
 router.route('/:id/assign').put(protect, assignTask); // Task seeker assigns a provider

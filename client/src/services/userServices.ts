@@ -17,3 +17,12 @@ export const updateUserProfile = async (profileData: ProfileUpdateData): Promise
 export const saveFcmToken = async (token: string): Promise<void> => {
   await api.post('/users/fcm-token', { token });
 };
+
+/**
+ * Creates a Stripe onboarding link for the current user.
+ * Corresponds to: POST /api/users/stripe-onboarding
+ */
+export const createStripeOnboardingLink = async (): Promise<{ url: string }> => {
+  const { data } = await api.post('/users/stripe-onboarding');
+  return data;
+};

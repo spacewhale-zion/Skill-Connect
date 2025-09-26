@@ -21,7 +21,7 @@ const taskSchema = new mongoose.Schema(
     },
     budget: {
       amount: { type: Number, required: true },
-      currency: { type: String, default: 'INR' },
+      currency: { type: String, default: 'USD' },
     },
     // Location where the task needs to be done
     location: {
@@ -38,7 +38,7 @@ const taskSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
-      enum: ['Open', 'Assigned', 'Completed', 'Cancelled'],
+      enum: ['Open', 'Assigned', 'Completed', 'Cancelled', 'Pending Payment'],
       default: 'Open',
     },
     assignedProvider: {
@@ -52,6 +52,13 @@ const taskSchema = new mongoose.Schema(
     }],
     completedAt: {
       type: Date,
+    },
+    paymentIntentId: { // New field
+      type: String,
+    },
+    paid: { // New field
+      type: Boolean,
+      default: false,
     },
   },
   {
