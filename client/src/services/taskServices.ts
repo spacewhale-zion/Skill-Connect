@@ -4,7 +4,7 @@ import api from '../api/axiosConfig';
 
 // Represents the full Task object received from the backend
 
-import {Task,TaskCreationData,GeoSearchParams,TaskSearchParams} from '../types/index'
+import {Task,TaskCreationData,TaskSearchParams} from '../types/index'
 
 // --- API Service Functions ---
 
@@ -50,10 +50,10 @@ export const getTasks = async (params: TaskSearchParams): Promise<Task[]> => {
 export const assignTask = async (
   taskId: string,
   providerId: string,
-  bidId: string
-): Promise<{ clientSecret: string; task: Task }> => {
-  const { data } = await api.put(`/tasks/${taskId}/assign`, { providerId, bidId });
-  // Assuming backend response is { clientSecret, task }
+  bidId: string,
+  paymentMethod: 'Stripe' | 'Cash'
+): Promise<{ task: Task; clientSecret: string | null }> => {
+  const { data } = await api.put(`/tasks/${taskId}/assign`, { providerId, bidId, paymentMethod });
   return data;
 };
 export const getTaskPaymentDetails = async (taskId: string): Promise<{ clientSecret: string }> => {

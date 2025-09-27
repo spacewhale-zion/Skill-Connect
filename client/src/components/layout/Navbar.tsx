@@ -16,7 +16,7 @@ const Navbar = () => {
         </Link>
         <div className="hidden md:flex items-center space-x-4">
           <Link to="/tasks" className="py-2 px-3 hover:text-indigo-400">Find Tasks</Link>
-          <Link to="/providers" className="py-2 px-3 hover:text-indigo-400">Offer Skills</Link>
+          <Link to="/services" className="py-2 px-3 hover:text-indigo-400">Book Services</Link>
         </div>
 
         {/* Right section of the navbar */}

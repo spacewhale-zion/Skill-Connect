@@ -14,6 +14,9 @@ import type { AuthUser } from './types';
 import useFcmToken from './hooks/useFCMtoken';
 import AllMyTasksPage from './pages/Allmytask';
 import AllMyAssignedTasksPage from './pages/AllmyAssignedtask';
+import FindServicesPage from './pages/FindServicePage';
+import ServiceDetailsPage from './pages/ServiceDetailsPage';
+import AllMyServicesPage from './pages/AllmyServicePage';
 
 function App() {
 
@@ -52,6 +55,9 @@ function App() {
         <Route path="/tasks/:taskId" element={<TaskDetailsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/tasks" element={<FindTasksPage />} />
+         <Route path="/services" element={<FindServicesPage />} /> 
+           <Route path="/services/:serviceId" element={<ServiceDetailsPage />}/>
+        
         <Route
           path="/notifications"
           element={<NotificationsPage openChatWindow={openChatWindow}
@@ -59,6 +65,7 @@ function App() {
         />
         <Route path="/my-posted-tasks" element={<AllMyTasksPage />} />
         <Route path="/my-assigned-tasks" element={<AllMyAssignedTasksPage />} />
+        <Route path="/my-offered-services" element={<AllMyServicesPage />}/>
 
       </Routes>
     </>

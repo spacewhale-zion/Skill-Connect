@@ -53,8 +53,21 @@ const taskSchema = new mongoose.Schema(
     completedAt: {
       type: Date,
     },
+     isInstantBooking: { // <-- ADD THIS
+      type: Boolean,
+      default: false,
+    },
+    originatingService: { // <-- AND THIS
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Service',
+    },
     paymentIntentId: { // New field
       type: String,
+    },
+     paymentMethod: { // <-- ADD THIS
+      type: String,
+      enum: ['Stripe', 'Cash'],
+      default: 'Stripe'
     },
     paid: { // New field
       type: Boolean,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext.tsx';
 import { getTaskById, assignTask, completeTask, getTaskPaymentDetails } from '../services/taskServices.ts';
 import { getBidsForTask } from '../services/bidServices.ts';
@@ -11,11 +11,13 @@ import PlaceBidForm from '../components/bids/PlaceBidsForm.tsx';
 import ChatWindow from '../components/chat/ChatWindow.tsx';
 import SubmitReviewModal from '../components/reviews/SubmitReviewmodal.tsx';
 import PaymentModal from '../components/payment/PaymentModal.tsx';
-import type { AuthUser, Bid, Task } from '../types/index.ts';
+import PaymentMethodModal from '../components/payment/PaymentMethodModal';
+import type { AuthUser, Bid, Task, Reviewer } from '../types/index.ts';
 
 const TaskDetailsPage = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const { user, updateUser } = useAuth();
+  const navigate = useNavigate();
   const [task, setTask] = useState<Task | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +25,8 @@ const TaskDetailsPage = () => {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [clientSecret, setClientSecret] = useState('');
+  const [isPaymentMethodModalOpen, setIsPaymentMethodModalOpen] = useState(false);
+  const [selectedBid, setSelectedBid] = useState<Bid | null>(null);
 
   const fetchTaskData = async () => {
     if (!taskId) return;
@@ -30,8 +34,6 @@ const TaskDetailsPage = () => {
       setLoading(true);
       const taskData = await getTaskById(taskId);
       setTask(taskData);
-      // --- THIS IS THE FIX ---
-      // Fetch bids if the task is either Open OR Pending Payment
       if (user && user._id === taskData.taskSeeker._id && (taskData.status === 'Open' || taskData.status === 'Pending Payment')) {
         const bidsData = await getBidsForTask(taskId);
         setBids(bidsData);
@@ -47,18 +49,28 @@ const TaskDetailsPage = () => {
     fetchTaskData();
   }, [taskId, user?._id]);
 
-  const handleAcceptBid = async (providerId: string, bidId: string) => {
-    if (!taskId) return;
+  const handleAcceptBidClick = (bid: Bid) => {
+    setSelectedBid(bid);
+    setIsPaymentMethodModalOpen(true);
+  };
+
+  const handleSelectPaymentMethod = async (method: 'Stripe' | 'Cash') => {
+    if (!taskId || !selectedBid) return;
+    setIsPaymentMethodModalOpen(false);
+    
     try {
-      const response = await assignTask(taskId, providerId, bidId);
-      if (response.clientSecret) {
+      const response = await assignTask(taskId, selectedBid.provider._id, selectedBid._id, method);
+      
+      if (method === 'Stripe' && response.clientSecret) {
         setClientSecret(response.clientSecret);
         setIsPaymentModalOpen(true);
         toast.success('Bid accepted! Please complete the payment.');
-        // We call fetchTaskData() after payment success now
+      } else {
+        toast.success('Task assigned! You have agreed to pay in cash.');
+        fetchTaskData();
       }
     } catch (error) {
-      toast.error('Failed to accept bid.');
+      toast.error('Failed to assign task. Please try again.');
     }
   };
 
@@ -70,14 +82,13 @@ const TaskDetailsPage = () => {
       setIsPaymentModalOpen(true);
     } catch (error) {
       toast.error('Could not retrieve payment details. Please try again.');
-      console.error(error);
     }
   };
 
   const handlePaymentSuccess = () => {
     setIsPaymentModalOpen(false);
     toast.success('Payment successful! The task is now assigned.');
-    fetchTaskData(); // Refresh task data to show the 'Assigned' status
+    fetchTaskData();
   };
 
   const handleCompleteTask = async () => {
@@ -145,10 +156,8 @@ const TaskDetailsPage = () => {
             <div className="lg:col-span-2">
               <h2 className="text-2xl font-semibold text-gray-700 mb-4">Task Details</h2>
               <p className="text-gray-600 leading-relaxed">{task.description}</p>
-
               <h3 className="text-xl font-semibold text-gray-700 mt-8 mb-4">Location</h3>
               <MapView coordinates={mapCoordinates} />
-
               {task.status === 'Completed' && task.reviews && task.reviews.length > 0 && (
                 <div className="mt-8">
                   <h2 className="text-2xl font-semibold text-gray-700 mb-4">Reviews</h2>
@@ -156,8 +165,8 @@ const TaskDetailsPage = () => {
                     {task.reviews.map(review => (
                       <div key={review._id} className="bg-gray-50 p-4 rounded-lg">
                         <div className="flex items-center mb-2">
-                          <img
-                            src={review.reviewer.profilePicture || `https://ui-avatars.com/api/?name=${review.reviewer.name}&background=random&size=128`}
+                          <img 
+                            src={review.reviewer.profilePicture || `https://ui-avatars.com/api/?name=${review.reviewer.name}&background=random&size=128`} 
                             alt={review.reviewer.name}
                             className="w-10 h-10 rounded-full mr-3"
                           />
@@ -182,7 +191,7 @@ const TaskDetailsPage = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Budget</p>
-                  <p className="text-3xl font-extrabold text-indigo-600">₹{task.budget.amount}</p>
+                  <p className="text-3xl font-extrabold text-indigo-600">${task.budget.amount}</p>
                 </div>
               </div>
               
@@ -208,9 +217,11 @@ const TaskDetailsPage = () => {
                   <div className="space-y-4">
                     {bids.length > 0 ? bids.map(bid => (
                       <div key={bid._id} className="bg-white p-4 border rounded-lg">
-                        <p className="font-bold text-lg">₹{bid.amount}</p>
+                        <p className="font-bold text-lg">${bid.amount}</p>
                         <p className="text-sm text-gray-600 my-2">by {bid.provider.name} (⭐ {bid.provider.averageRating?.toFixed(1) || 'New'})</p>
-                        <button onClick={() => handleAcceptBid(bid.provider._id, bid._id)} className="w-full text-sm bg-green-500 text-white py-2 rounded hover:bg-green-600">Accept Bid</button>
+                        <button onClick={() => handleAcceptBidClick(bid)} className="w-full text-sm bg-green-500 text-white py-2 rounded hover:bg-green-600">
+                          Accept Bid
+                        </button>
                       </div>
                     )) : <p className="text-gray-500">No bids yet.</p>}
                   </div>
@@ -251,6 +262,13 @@ const TaskDetailsPage = () => {
           revieweeName={isOwner ? task.assignedProvider!.name : task.taskSeeker.name}
         />
       )}
+
+      <PaymentMethodModal
+        isOpen={isPaymentMethodModalOpen}
+        onClose={() => setIsPaymentMethodModalOpen(false)}
+        onSelectPaymentMethod={handleSelectPaymentMethod}
+        bidAmount={selectedBid?.amount || 0}
+      />
       
       <PaymentModal
         isOpen={isPaymentModalOpen}

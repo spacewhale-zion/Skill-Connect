@@ -131,8 +131,15 @@ const getTaskById = asyncHandler(async (req, res) => {
  * @route   PUT /api/tasks/:id/assign
  * @access  Private (only for the task seeker)
  */
+
+
+/**
+ * @desc    Assign a provider to a task and handle payment method
+ * @route   PUT /api/tasks/:id/assign
+ * @access  Private (only for the task seeker)
+ */
 const assignTask = asyncHandler(async (req, res) => {
-  const { providerId, bidId } = req.body;
+  const { providerId, bidId, paymentMethod } = req.body; // paymentMethod will come from the frontend
   const task = await Task.findById(req.params.id);
   const bid = await Bid.findById(bidId);
 
@@ -141,40 +148,101 @@ const assignTask = asyncHandler(async (req, res) => {
     throw new Error('Task or Bid not found.');
   }
 
+  // Authorization: Check if logged-in user is the task creator
   if (!task.taskSeeker.equals(req.user._id)) {
     res.status(403);
     throw new Error('You are not authorized to assign this task.');
   }
 
-  // --- THIS IS THE FIX ---
   // Allow assignment if the task is open OR already pending payment
   if (task.status !== 'Open' && task.status !== 'Pending Payment') {
     res.status(400);
     throw new Error('Task is not open for assignment.');
   }
 
-  const paymentIntent = await createPaymentIntent(bid.amount);
+  // --- LOGIC FOR PAYMENT METHOD ---
+  if (paymentMethod === 'Cash') {
+    // If cash, assign the task directly without involving Stripe for payment intent
+    task.assignedProvider = providerId;
+    task.status = 'Assigned';
+    task.paymentMethod = 'Cash'; // Record the chosen payment method
+    
+    const updatedTask = await task.save();
 
-  task.assignedProvider = providerId;
-  task.status = 'Pending Payment';
-  task.paymentIntentId = paymentIntent.id;
+    // Update the accepted bid's status
+    await Bid.findByIdAndUpdate(bidId, { status: 'Accepted' });
+    // Reject all other bids for this task
+    await Bid.updateMany(
+        { task: req.params.id, _id: { $ne: bidId } },
+        { status: 'Rejected' }
+    );
+    
+    // --- Notification logic for the provider ---
+    const notificationTitle = 'Your bid was accepted!';
+    const notificationBody = `Your bid for the task "${task.title}" has been accepted. You will be paid in cash upon completion.`;
+    const notification = await Notification.create({
+        user: providerId,
+        title: notificationTitle,
+        message: notificationBody,
+        link: `/tasks/${task._id}`
+    });
+    const recipientSocketId = onlineUsers.get(providerId.toString());
+    if (recipientSocketId) {
+        io.to(recipientSocketId).emit('new_notification', notification);
+    } else {
+        const provider = await User.findById(providerId);
+        if (provider && provider.fcmToken) {
+            await sendPushNotification(provider.fcmToken, notificationTitle, notificationBody, { taskId: task._id.toString(), type: 'BID_ACCEPTED' });
+        }
+    }
+    
+    // Respond without a clientSecret as no online payment is needed
+    res.status(200).json({ task: updatedTask, clientSecret: null });
 
-  const updatedTask = await task.save();
+  } else {
+    // Default to Stripe if 'Cash' is not specified
+    const paymentIntent = await createPaymentIntent(bid.amount);
 
-  await Bid.findByIdAndUpdate(bidId, { status: 'Accepted' });
-  await Bid.updateMany(
-    { task: req.params.id, _id: { $ne: bidId } },
-    { status: 'Rejected' }
-  );
+    task.assignedProvider = providerId;
+    task.status = 'Pending Payment';
+    task.paymentMethod = 'Stripe';
+    task.paymentIntentId = paymentIntent.id;
 
-  // --- Notification Logic (no changes needed) ---
+    const updatedTask = await task.save();
 
-  // I'm also correcting the JSON response to match what the frontend expects
-  res.status(200).json({
-    task: updatedTask,
-    clientSecret: paymentIntent.client_secret,
-  });
+    await Bid.findByIdAndUpdate(bidId, { status: 'Accepted' });
+    await Bid.updateMany(
+      { task: req.params.id, _id: { $ne: bidId } },
+      { status: 'Rejected' }
+    );
+    
+    // --- Notification logic for the provider ---
+    const notificationTitle = 'Your bid was accepted!';
+    const notificationBody = `Your bid for the task "${task.title}" has been accepted. Please wait for the seeker to complete the payment.`;
+    const notification = await Notification.create({
+        user: providerId,
+        title: notificationTitle,
+        message: notificationBody,
+        link: `/tasks/${task._id}`
+    });
+    const recipientSocketId = onlineUsers.get(providerId.toString());
+    if (recipientSocketId) {
+        io.to(recipientSocketId).emit('new_notification', notification);
+    } else {
+        const provider = await User.findById(providerId);
+        if (provider && provider.fcmToken) {
+            await sendPushNotification(provider.fcmToken, notificationTitle, notificationBody, { taskId: task._id.toString(), type: 'BID_ACCEPTED' });
+        }
+    }
+
+    // Respond with the client secret for the frontend to process the Stripe payment
+    res.status(200).json({
+      task: updatedTask,
+      clientSecret: paymentIntent.client_secret,
+    });
+  }
 });
+
 
 
 const getPaymentDetailsForTask = asyncHandler(async (req, res) => {
@@ -214,7 +282,7 @@ const getPaymentDetailsForTask = asyncHandler(async (req, res) => {
  * @access  Private (only for the task seeker)
  */
 const completeTask = asyncHandler(async (req, res) => {
-  const task = await Task.findById(req.params.id);
+  const task = await Task.findById(req.params.id).populate('assignedProvider');
 
   if (!task) {
     res.status(404);
@@ -232,64 +300,55 @@ const completeTask = asyncHandler(async (req, res) => {
     throw new Error('Task must be assigned before it can be completed.');
   }
 
+  // --- THIS IS THE FIX ---
+  // Only attempt a Stripe payout if the payment method is 'Stripe'
+  if (task.paymentMethod === 'Stripe') {
+    const provider = task.assignedProvider;
+    if (!provider || !provider.stripeAccountId) {
+      res.status(400);
+      throw new Error('Provider has not set up their payment account.');
+    }
 
-   // --- NEW PAYOUT LOGIC ---
-  const provider = task.assignedProvider;
-  if (!provider || !provider.stripeAccountId) {
-    res.status(400);
-    throw new Error('Provider has not set up their payment account.');
+    const bid = await Bid.findOne({ task: task._id, status: 'Accepted' });
+    if (!bid) {
+        res.status(404); throw new Error('Accepted bid not found for this task.');
+    }
+    const platformFee = bid.amount * 0.10; // Example: 10% fee
+    const amountToTransfer = Math.round((bid.amount - platformFee) * 100);
+
+    try {
+      await stripe.transfers.create({
+        amount: amountToTransfer,
+        currency: 'usd',
+        destination: provider.stripeAccountId,
+        source_transaction: task.paymentIntentId,
+      });
+    } catch (error) {
+      console.error('Stripe transfer error:', error);
+      res.status(500);
+      throw new Error('Failed to process payout to the provider.');
+    }
   }
-  
-  // 1. Calculate the payout amount (e.g., Bid Amount - Your Platform Fee)
-  const bid = await Bid.findOne({ task: task._id, status: 'Accepted' });
-  if (!bid) {
-      res.status(404); throw new Error('Accepted bid not found for this task.');
-  }
-  const platformFee = bid.amount * 0.10; // Example: 10% fee
-  const amountToTransfer = Math.round((bid.amount - platformFee) * 100); // Amount in smallest currency unit
 
-  // 2. Create the transfer to the provider's Stripe account
-  try {
-    await stripe.transfers.create({
-      amount: amountToTransfer,
-      currency: 'usd',
-      destination: provider.stripeAccountId,
-      source_transaction: task.paymentIntentId, // Link this transfer to the original payment
-    });
-  } catch (error) {
-    console.error('Stripe transfer error:', error);
-    res.status(500);
-    throw new Error('Failed to process payout to the provider.');
-  }
-  // --- END OF PAYOUT LOGIC ---
-
-
+  // Update the task status regardless of payment method
   task.status = 'Completed';
   task.completedAt = Date.now();
-
   const updatedTask = await task.save();
 
-  // --- NEW: NOTIFY THE ASSIGNED PROVIDER ---
+  // --- Notification logic (remains the same) ---
   if (task.assignedProvider) {
     const notificationTitle = 'Task marked as completed!';
     const notificationBody = `The task "${task.title}" has been marked as completed by the task seeker.`;
-
-    // 1. Create a DB notification
     const notification = await Notification.create({
       user: task.assignedProvider,
       title: notificationTitle,
       message: notificationBody,
       link: `/tasks/${task._id}`
     });
-
-    // 2. Check if provider is online
     const recipientSocketId = onlineUsers.get(task.assignedProvider.toString());
-
     if (recipientSocketId) {
-      // 2a. Real-time socket notification
       io.to(recipientSocketId).emit('new_notification', notification);
     } else {
-      // 2b. Push notification via FCM
       const provider = await User.findById(task.assignedProvider);
       if (provider && provider.fcmToken) {
         await sendPushNotification(
@@ -301,7 +360,6 @@ const completeTask = asyncHandler(async (req, res) => {
       }
     }
   }
-  // --- END OF NEW NOTIFICATION LOGIC ---
 
   res.status(200).json(updatedTask);
 });

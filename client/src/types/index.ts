@@ -77,6 +77,33 @@ export interface Review {
   comment?: string;
   createdAt: string;
 }
+export interface Service {
+  _id: string;
+  provider: {
+    _id: string;
+    name: string;
+    averageRating?: number;
+  };
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  location: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
+  isActive: boolean;
+  createdAt: string;
+   distance?: number; 
+}
+
+export interface ServiceSearchParams {
+  lat?: number;
+  lng?: number;
+  category?: string;
+  keyword?: string;
+  maxPrice?: number;
+}
 
 export interface Task {
   _id: string;
@@ -105,6 +132,8 @@ export interface Task {
     profilePicture?: string;
     averageRating?: number;
   };
+  isInstantBooking?: boolean;      // <-- ADD THIS
+  originatingService?: string; 
   createdAt: string;
   completedAt?: string;
 }
