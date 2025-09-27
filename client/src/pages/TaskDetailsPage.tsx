@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+// spacewhale-zion/skill-connect/Skill-Connect-6ff14bc1e35fe2984b9bfa9c060b6b7639e02145/client/src/pages/TaskDetailsPage.tsx
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext.tsx';
 import { getTaskById, assignTask, completeTask, getTaskPaymentDetails } from '../services/taskServices.ts';
@@ -13,6 +14,7 @@ import SubmitReviewModal from '../components/reviews/SubmitReviewmodal.tsx';
 import PaymentModal from '../components/payment/PaymentModal.tsx';
 import PaymentMethodModal from '../components/payment/PaymentMethodModal';
 import type { AuthUser, Bid, Task } from '../types/index.ts';
+import { useNotifications } from '../context/notificationContext.tsx';
 
 const TaskDetailsPage = () => {
   const { taskId } = useParams<{ taskId: string }>();
@@ -21,15 +23,15 @@ const TaskDetailsPage = () => {
   const [task, setTask] = useState<Task | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isFinalizing, setIsFinalizing] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [clientSecret, setClientSecret] = useState('');
   const [isPaymentMethodModalOpen, setIsPaymentMethodModalOpen] = useState(false);
   const [selectedBid, setSelectedBid] = useState<Bid | null>(null);
+  const { socket } = useNotifications();
 
-  const fetchTaskData = async () => {
+  const fetchTaskData = useCallback(async () => {
     if (!taskId) return;
     try {
       setLoading(true);
@@ -41,15 +43,28 @@ const TaskDetailsPage = () => {
       }
     } catch (error) {
       toast.error('Failed to fetch task details.');
+      console.error(error)
     } finally {
       setLoading(false);
     }
-  };
-  console.log(task);
+  }, [taskId, user]);
 
   useEffect(() => {
     fetchTaskData();
-  }, [taskId, user?._id]);
+
+    if (socket) {
+      socket.on('payment_success', (data) => {
+        if (data.taskId === taskId) {
+          toast.success('Payment confirmed! Task is now assigned.');
+          fetchTaskData();
+        }
+      });
+
+      return () => {
+        socket.off('payment_success');
+      };
+    }
+  }, [taskId, socket, fetchTaskData]);
 
   const handleAcceptBidClick = (bid: Bid) => {
     setSelectedBid(bid);
@@ -89,14 +104,7 @@ const TaskDetailsPage = () => {
 
   const handlePaymentSuccess = () => {
     setIsPaymentModalOpen(false);
-    toast.success('Payment successful! Finalizing assignment...');
-    setIsFinalizing(true);
-
-    setTimeout(() => {
-      fetchTaskData().then(() => {
-        setIsFinalizing(false);
-      });
-    }, 3000);
+    toast.success('Payment successful! Waiting for server confirmation...');
   };
 
   const handleCompleteTask = async () => {
@@ -200,20 +208,12 @@ const TaskDetailsPage = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Budget</p>
-                  <p className="text-3xl font-extrabold text-indigo-600">${task.budget.amount}</p>
+                  <p className="text-3xl font-extrabold text-indigo-600">₹{task.budget.amount}</p>
                 </div>
               </div>
 
-              {isFinalizing && (
-                <div className="mt-6 bg-blue-50 border border-blue-300 p-4 rounded-lg text-center">
-                    <h3 className="text-lg font-bold text-blue-800">Finalizing Assignment...</h3>
-                    <p className="text-blue-700 mt-2 text-sm">
-                        Please wait a moment while we confirm your payment.
-                    </p>
-                </div>
-              )}
               
-              {!isFinalizing && (
+              
                 <>
                   {user && isOwner && task.status === 'Pending Payment' && (
                     <div className="mt-6 bg-yellow-50 border border-yellow-300 p-4 rounded-lg text-center">
@@ -237,7 +237,7 @@ const TaskDetailsPage = () => {
                       <div className="space-y-4">
                         {bids.length > 0 ? bids.map(bid => (
                           <div key={bid._id} className="bg-white p-4 border rounded-lg">
-                            <p className="font-bold text-lg">${bid.amount}</p>
+                            <p className="font-bold text-lg">₹{bid.amount}</p>
                             <p className="text-sm text-gray-600 my-2">by {bid.provider.name} (⭐ {bid.provider.averageRating?.toFixed(1) || 'New'})</p>
                             <button onClick={() => handleAcceptBidClick(bid)} className="w-full text-sm bg-green-500 text-white py-2 rounded hover:bg-green-600">
                               Accept Bid
@@ -265,7 +265,7 @@ const TaskDetailsPage = () => {
                      <PlaceBidForm taskId={task._id} onBidPlaced={fetchTaskData} />
                   )}
                 </>
-              )}
+              
             </div>
           </div>
         </div>

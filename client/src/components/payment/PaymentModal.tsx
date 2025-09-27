@@ -1,3 +1,4 @@
+// spacewhale-zion/skill-connect/Skill-Connect-6ff14bc1e35fe2984b9bfa9c060b6b7639e02145/client/src/components/payment/PaymentModal.tsx
 import { useState, useEffect } from 'react';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -22,7 +23,10 @@ const CheckoutForm = ({ onSuccessfulPayment, clientSecret }: CheckoutFormProps) 
     }
     // Immediately retrieve the PaymentIntent to check its status upon loading
     stripe.retrievePaymentIntent(clientSecret).then(({ paymentIntent }) => {
+      
+        console.log(paymentIntent?.status );
       switch (paymentIntent?.status) {
+
         case "succeeded":
           // If already paid, trigger success immediately.
           onSuccessfulPayment();

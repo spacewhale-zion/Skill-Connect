@@ -1,3 +1,4 @@
+// spacewhale-zion/skill-connect/Skill-Connect-6ff14bc1e35fe2984b9bfa9c060b6b7639e02145/server/sockets/socketHandler.js
 // server/sockets/socketHandler.js
 import jwt from 'jsonwebtoken';
 import Message from '../models/Message.js';
@@ -42,6 +43,7 @@ const socketHandler = (io) => {
         const message = await Message.create({
           conversation: conversationId,
           sender: socket.userId,
+          recipient: recipientId, // This line was missing the recipient
           text,
         });
 

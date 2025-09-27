@@ -1,3 +1,4 @@
+// spacewhale-zion/skill-connect/Skill-Connect-6ff14bc1e35fe2984b9bfa9c060b6b7639e02145/client/src/context/notificationContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './authContext';
@@ -9,8 +10,9 @@ interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
   setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
-  decrementUnreadCount: () => void; // <-- NEW: Function to decrement count
-   incrementUnreadCount: () => void;
+  decrementUnreadCount: () => void;
+  incrementUnreadCount: () => void;
+  socket: Socket | null; // Expose the socket
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -57,7 +59,6 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
     if (socket) {
       socket.on('new_notification', (newNotification: Notification) => {
-        // Prevent duplicate toasts for chat messages if chat window is open
         if (newNotification.title !== 'New Chat Message') {
            toast.success(`New notification: ${newNotification.title}`);
         }
@@ -72,7 +73,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   }, [socket, loadNotifications]);
 
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, setNotifications, decrementUnreadCount,incrementUnreadCount }}>
+    <NotificationContext.Provider value={{ notifications, unreadCount, setNotifications, decrementUnreadCount, incrementUnreadCount, socket }}>
       {children}
     </NotificationContext.Provider>
   );

@@ -1,3 +1,4 @@
+// spacewhale-zion/skill-connect/Skill-Connect-6ff14bc1e35fe2984b9bfa9c060b6b7639e02145/server/controllers/PaymentController.js
 import asyncHandler from 'express-async-handler';
 import { verifyWebhook } from '../services/paymentService.js';
 import Task from '../models/Task.js';
@@ -13,7 +14,11 @@ import { sendPushNotification } from '../services/notificationService.js';
  * @route   POST /api/payments/stripe-webhook
  * @access  Public (Webhook from Stripe)
  */
+
+
 const stripeWebhookHandler = asyncHandler(async (req, res) => {
+
+  console.log("Webhook received");
   const signature = req.headers['stripe-signature'];
   let event;
 
@@ -22,7 +27,7 @@ const stripeWebhookHandler = asyncHandler(async (req, res) => {
   } catch (err) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
-
+  console.log(event.type);
   // Handle the payment_intent.succeeded event
   if (event.type === 'payment_intent.succeeded') {
     const paymentIntent = event.data.object;
@@ -31,7 +36,7 @@ const stripeWebhookHandler = asyncHandler(async (req, res) => {
     // Find the associated task in your DB and update its status
     const task = await Task.findOne({ paymentIntentId: paymentIntent.id });
 
-    if (task) {
+    if (task && task.status === 'Pending Payment') {
       task.paid = true;
       task.status = 'Assigned';
       await task.save();
@@ -57,6 +62,12 @@ const stripeWebhookHandler = asyncHandler(async (req, res) => {
            await sendPushNotification(provider.fcmToken, notificationTitle, notificationBody, { taskId: task._id.toString(), type: 'PAYMENT_CONFIRMED' });
          }
        }
+
+      // Emit a specific event to the task seeker to notify of payment success
+      const taskSeekerSocketId = onlineUsers.get(task.taskSeeker.toString());
+      if (taskSeekerSocketId) {
+        io.to(taskSeekerSocketId).emit('payment_success', { taskId: task._id.toString() });
+      }
     }
   } else {
     console.log(`Unhandled event type ${event.type}`);
