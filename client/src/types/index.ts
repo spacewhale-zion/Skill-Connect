@@ -95,6 +95,7 @@ export interface Service {
   isActive: boolean;
   createdAt: string;
    distance?: number; 
+    originatingTask?: string;
 }
 
 export interface ServiceSearchParams {
@@ -103,13 +104,14 @@ export interface ServiceSearchParams {
   category?: string;
   keyword?: string;
   maxPrice?: number;
+ 
 }
 
 export interface Task {
   _id: string;
   title: string;
   description: string;
-  status: 'Open' | 'Assigned' | 'Completed' | 'Cancelled'| 'Pending Payment';
+  status: 'Open' | 'Assigned' | 'Completed' | 'Cancelled'| 'Pending Payment' | 'CompletedByProvider';
   category: string;
   budget: {
     amount: number;
@@ -136,6 +138,7 @@ export interface Task {
   originatingService?: string; 
   createdAt: string;
   completedAt?: string;
+
 }
 
 // Represents the data needed to create a new task

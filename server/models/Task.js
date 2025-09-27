@@ -1,3 +1,4 @@
+// spacewhale-zion/skill-connect/Skill-Connect-7116ae5702cce0b0c74858586a22e6d652228ad1/server/models/Task.js
 import mongoose from 'mongoose';
 
 const taskSchema = new mongoose.Schema(
@@ -23,7 +24,6 @@ const taskSchema = new mongoose.Schema(
       amount: { type: Number, required: true },
       currency: { type: String, default: 'USD' },
     },
-    // Location where the task needs to be done
     location: {
       type: {
         type: String,
@@ -38,7 +38,7 @@ const taskSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
-      enum: ['Open', 'Assigned', 'Completed', 'Cancelled', 'Pending Payment'],
+      enum: ['Open', 'Assigned', 'CompletedByProvider', 'Completed', 'Cancelled', 'Pending Payment'],
       default: 'Open',
     },
     assignedProvider: {
@@ -46,30 +46,30 @@ const taskSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
-     reviews: [{ // Add this field
+     reviews: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Review'
     }],
     completedAt: {
       type: Date,
     },
-     isInstantBooking: { // <-- ADD THIS
+     isInstantBooking: {
       type: Boolean,
       default: false,
     },
-    originatingService: { // <-- AND THIS
+    originatingService: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Service',
     },
-    paymentIntentId: { // New field
+    paymentIntentId: {
       type: String,
     },
-     paymentMethod: { // <-- ADD THIS
+     paymentMethod: {
       type: String,
       enum: ['Stripe', 'Cash'],
       default: 'Stripe'
     },
-    paid: { // New field
+    paid: {
       type: Boolean,
       default: false,
     },
@@ -79,10 +79,7 @@ const taskSchema = new mongoose.Schema(
   }
 );
 
-// Create a 2dsphere index for geospatial queries
 taskSchema.index({ location: '2dsphere' });
-
-// Create a separate text index for keyword searching
 taskSchema.index({ title: 'text', description: 'text', category: 'text' });
 
 const Task = mongoose.model('Task', taskSchema);

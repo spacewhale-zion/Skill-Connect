@@ -1,9 +1,9 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/authContext';
 import { getMyPostedTasks, getMyAssignedTasks } from '../services/taskServices';
 import { getMyOfferedServices } from '../services/serviceServices';
 import TaskCard from '../components/tasks/TaskCard';
-import ServiceCard from '../components/services/ServiceCardDashBoard'; // <-- Import new ServiceCard
+import ServiceCard from '../components/services/ServiceCardDashBoard';
 import PostTaskModal from '../components/tasks/PostTaskModal';
 import PostServiceModal from '../components/services/PostServiceModel';
 import toast from 'react-hot-toast';
@@ -43,6 +43,15 @@ const DashboardPage = () => {
     fetchData();
   }, [fetchData]);
 
+  const bookedServices = useMemo(() => {
+    return postedTasks.filter(task => task.isInstantBooking);
+  }, [postedTasks]);
+
+  const regularPostedTasks = useMemo(() => {
+    return postedTasks.filter(task => !task.isInstantBooking);
+  }, [postedTasks]);
+
+
   if (isLoading) {
     return <div>Loading dashboard...</div>;
   }
@@ -63,6 +72,15 @@ const DashboardPage = () => {
         <h2 className="text-2xl font-semibold text-gray-700 mb-6">My Profile</h2>
         <ProfilePage />
        </div>
+
+       {bookedServices.length > 0 && (
+          <section className="mb-12">
+              <h2 className="text-2xl font-semibold text-gray-700 mb-4">My Booked Services</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {bookedServices.map(task => <TaskCard key={task._id} task={task} />)}
+              </div>
+          </section>
+      )}
 
       <section className="mb-12">
         <div className="flex justify-between items-center mb-4">
@@ -95,15 +113,15 @@ const DashboardPage = () => {
       <section className="mb-12">
         <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold text-gray-700">My Posted Tasks</h2>
-            {postedTasks.length > 3 && (
+            {regularPostedTasks.length > 3 && (
                 <Link to="/my-posted-tasks" className="text-indigo-600 hover:underline font-semibold">
                 View More
                 </Link>
             )}
         </div>
-        {Array.isArray(postedTasks) && postedTasks.length > 0 ? (
+        {regularPostedTasks.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {postedTasks.slice(0, 3).map(task => <TaskCard key={task._id} task={task} />)}
+            {regularPostedTasks.slice(0, 3).map(task => <TaskCard key={task._id} task={task} />)}
           </div>
         ) : (
           <p className="text-gray-500 bg-white p-6 rounded-lg">You haven't posted any tasks yet.</p>
@@ -119,7 +137,7 @@ const DashboardPage = () => {
                 </Link>
             )}
         </div>
-        {Array.isArray(assignedTasks) && assignedTasks.length > 0 ? (
+        {assignedTasks.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {assignedTasks.slice(0, 3).map(task => <TaskCard key={task._id} task={task} />)}
           </div>

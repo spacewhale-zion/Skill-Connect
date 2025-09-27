@@ -1,5 +1,4 @@
-// spacewhale-zion/skill-connect/Skill-Connect-6ff14bc1e35fe2984b9bfa9c060b6b7639e02145/server/sockets/socketHandler.js
-// server/sockets/socketHandler.js
+// spacewhale-zion/skill-connect/Skill-Connect-7116ae5702cce0b0c74858586a22e6d652228ad1/server/sockets/socketHandler.js
 import jwt from 'jsonwebtoken';
 import Message from '../models/Message.js';
 import Notification from '../models/Notification.js';
@@ -39,22 +38,37 @@ const socketHandler = (io) => {
     // Send message
     socket.on('send_message', async ({ conversationId, taskId, text, recipientId }) => {
       try {
-        // Save message in DB
         const message = await Message.create({
           conversation: conversationId,
           sender: socket.userId,
-          recipient: recipientId, // This line was missing the recipient
+          recipient: recipientId,
           text,
         });
 
         const populatedMessage = await message.populate('sender', 'name profilePicture');
 
-        // Emit message to room
+        // Emit message to the chat room (for users with the chat window open)
         io.to(taskId).emit('message_received', populatedMessage);
 
-        // Push notification for offline recipient
         const recipient = await User.findById(recipientId);
-        if (recipient && recipient.fcmToken && !onlineUsers.has(recipientId)) {
+        const isRecipientOnline = onlineUsers.has(recipientId);
+
+        // Save notification in DB
+        const notification = await Notification.create({
+          user: recipientId,
+          title: `New message from ${populatedMessage.sender.name}`,
+          message: text,
+          link: `/tasks/${taskId}`,
+          isRead: false,
+        });
+
+        // If recipient is online, send a socket event to update their notification bell
+        if (isRecipientOnline) {
+          const recipientSocketId = onlineUsers.get(recipientId);
+          io.to(recipientSocketId).emit('new_notification', notification);
+        }
+        // If the recipient is offline but has an FCM token, send a push notification
+        else if (recipient && recipient.fcmToken) {
           try {
             await sendPushNotification(
               recipient.fcmToken,
@@ -70,16 +84,6 @@ const socketHandler = (io) => {
             }
           }
         }
-
-        // Save notification in DB
-        await Notification.create({
-          user: recipientId,
-          title: `New message from ${populatedMessage.sender.name}`,
-          message: text,
-          link: `/tasks/${taskId}`,
-          isRead: false,
-        });
-
       } catch (err) {
         console.error('Error sending message:', err);
       }

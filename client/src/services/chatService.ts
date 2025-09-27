@@ -8,6 +8,7 @@ export interface Message {
   text: string;
   createdAt: string;
   isRead?: boolean; // <- optional flag for TypeScript
+  conversation: string;
 }
 
 export interface ChatHistoryResponse {

@@ -60,16 +60,16 @@ export const getTaskPaymentDetails = async (taskId: string): Promise<{ clientSec
   const { data } = await api.get(`/tasks/${taskId}/payment-details`);
   return data;
 };
-/**
- * Marks a task as complete.
- * Corresponds to: PUT /api/tasks/:id/complete
- * @param taskId - The ID of the task to update.
- */
+
+export const markTaskAsCompletedByProvider = async (taskId: string): Promise<Task> => {
+  const { data } = await api.put(`/tasks/${taskId}/complete-by-provider`);
+  return data;
+};
+
 export const completeTask = async (taskId: string): Promise<Task> => {
   const { data } = await api.put(`/tasks/${taskId}/complete`);
   return data;
 };
-
 
 /**
  * Fetches tasks created by the currently logged-in user.

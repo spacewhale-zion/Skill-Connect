@@ -1,3 +1,4 @@
+// spacewhale-zion/skill-connect/Skill-Connect-7116ae5702cce0b0c74858586a22e6d652228ad1/server/controllers/notificationController.js
 import asyncHandler from 'express-async-handler';
 import Notification from '../models/Notification.js';
 
@@ -30,4 +31,15 @@ const markAsRead = asyncHandler(async (req, res) => {
   }
 });
 
-export { getNotifications, markAsRead };
+/**
+ * @desc    Mark all notifications as read for the logged-in user
+ * @route   PUT /api/notifications/read-all
+ * @access  Private
+ */
+const markAllAsRead = asyncHandler(async (req, res) => {
+  await Notification.updateMany({ user: req.user._id, isRead: false }, { isRead: true });
+  res.status(200).json({ message: 'All notifications marked as read.' });
+});
+
+
+export { getNotifications, markAsRead, markAllAsRead };

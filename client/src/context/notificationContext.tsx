@@ -1,4 +1,4 @@
-// spacewhale-zion/skill-connect/Skill-Connect-6ff14bc1e35fe2984b9bfa9c060b6b7639e02145/client/src/context/notificationContext.tsx
+// spacewhale-zion/skill-connect/Skill-Connect-7116ae5702cce0b0c74858586a22e6d652228ad1/client/src/context/notificationContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './authContext';
@@ -12,7 +12,8 @@ interface NotificationContextType {
   setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
   decrementUnreadCount: () => void;
   incrementUnreadCount: () => void;
-  socket: Socket | null; // Expose the socket
+  clearUnreadCount: () => void; // New function to clear the count
+  socket: Socket | null;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -54,6 +55,10 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     setUnreadCount(prev => (prev > 0 ? prev - 1 : 0));
   };
 
+  const clearUnreadCount = () => {
+    setUnreadCount(0);
+  };
+
   useEffect(() => {
     loadNotifications();
 
@@ -73,7 +78,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   }, [socket, loadNotifications]);
 
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, setNotifications, decrementUnreadCount, incrementUnreadCount, socket }}>
+    <NotificationContext.Provider value={{ notifications, unreadCount, setNotifications, decrementUnreadCount, incrementUnreadCount, clearUnreadCount, socket }}>
       {children}
     </NotificationContext.Provider>
   );

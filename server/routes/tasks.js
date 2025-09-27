@@ -1,9 +1,6 @@
-// In server/routes/tasks.js
-
+// spacewhale-zion/skill-connect/Skill-Connect-7116ae5702cce0b0c74858586a22e6d652228ad1/server/routes/tasks.js
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
-
-// Import ALL task controllers
 import {
   createTask,
   getTasks,
@@ -13,6 +10,7 @@ import {
   getMyPostedTasks,
   getMyAssignedTasks,
   getPaymentDetailsForTask,
+  markCompletedByProvider, // Import the new controller
 } from '../controllers/taskController.js';
 
 import { createBid, getBidsForTask } from '../controllers/bidController.js';
@@ -20,31 +18,26 @@ import { createReview } from '../controllers/reviewController.js';
 
 const router = express.Router();
 
-
-// --- Routes for Dashboard ---
 router.route('/mytasks').get(protect, getMyPostedTasks);
 router.route('/assignedtome').get(protect, getMyAssignedTasks);
 
-// --- Main Task Routes ---
 router.route('/')
-  .post(protect, createTask) // Logged-in user creates a task
-  .get(getTasks); // Anyone can get tasks (with filters)
+  .post(protect, createTask)
+  .get(getTasks);
 
 router.route('/:id')
-  .get(getTaskById); // Anyone can view a single task
+  .get(getTaskById);
 
 router.route('/:id/payment-details').get(protect, getPaymentDetailsForTask);
 
-// --- Task Lifecycle Routes ---
-router.route('/:id/assign').put(protect, assignTask); // Task seeker assigns a provider
-router.route('/:id/complete').put(protect, completeTask); // Task seeker marks as complete
+router.route('/:id/assign').put(protect, assignTask);
+router.route('/:id/complete-by-provider').put(protect, markCompletedByProvider); // Add new route
+router.route('/:id/complete').put(protect, completeTask);
 
-// --- Nested Bid Routes ---
 router.route('/:taskId/bids')
   .post(protect, createBid)
   .get(protect, getBidsForTask);
 
-// --- Nested Review Route ---
 router.route('/:taskId/review').post(protect, createReview);
 
 export default router;

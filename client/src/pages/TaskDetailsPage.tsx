@@ -1,8 +1,7 @@
-// spacewhale-zion/skill-connect/Skill-Connect-6ff14bc1e35fe2984b9bfa9c060b6b7639e02145/client/src/pages/TaskDetailsPage.tsx
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext.tsx';
-import { getTaskById, assignTask, completeTask, getTaskPaymentDetails } from '../services/taskServices.ts';
+import { getTaskById, assignTask, completeTask, getTaskPaymentDetails, markTaskAsCompletedByProvider } from '../services/taskServices.ts';
 import { getBidsForTask } from '../services/bidServices.ts';
 import toast from 'react-hot-toast';
 import Navbar from '../components/layout/Navbar.tsx';
@@ -53,15 +52,17 @@ const TaskDetailsPage = () => {
     fetchTaskData();
 
     if (socket) {
-      socket.on('payment_success', (data) => {
+      const handlePaymentSuccess = (data: { taskId: string }) => {
         if (data.taskId === taskId) {
           toast.success('Payment confirmed! Task is now assigned.');
           fetchTaskData();
         }
-      });
+      };
+
+      socket.on('payment_success', handlePaymentSuccess);
 
       return () => {
-        socket.off('payment_success');
+        socket.off('payment_success', handlePaymentSuccess);
       };
     }
   }, [taskId, socket, fetchTaskData]);
@@ -107,18 +108,29 @@ const TaskDetailsPage = () => {
     toast.success('Payment successful! Waiting for server confirmation...');
   };
 
-  const handleCompleteTask = async () => {
+  const handleProviderComplete = async () => {
+    if (!taskId) return;
+    try {
+      const updatedTask = await markTaskAsCompletedByProvider(taskId);
+      setTask(updatedTask);
+      toast.success('Task marked as complete. The seeker will be notified to confirm.');
+    } catch (error) {
+      toast.error('Failed to mark task as complete.');
+    }
+  };
+
+  const handleSeekerConfirm = async () => {
     if (!taskId) return;
     try {
       const updatedTask = await completeTask(taskId);
       setTask(updatedTask);
-      toast.success('Task marked as complete!');
+      toast.success('Task confirmed and payment released!');
       setIsReviewModalOpen(true);
     } catch (error: any) {
-        if (error.response && error.response.data && error.response.data.message.includes('Provider has not set up their payment account')) {
-            toast.error('Provider has not set up payouts yet. They must link their bank account before you can complete this task.');
+        if (error.response?.data?.message) {
+            toast.error(error.response.data.message);
         } else {
-            toast.error('Failed to mark task as complete.');
+            toast.error('Failed to confirm completion.');
         }
     }
   };
@@ -212,56 +224,72 @@ const TaskDetailsPage = () => {
                 </div>
               </div>
 
-              
-              
                 <>
-                  {user && isOwner && task.status === 'Pending Payment' && (
-                    <div className="mt-6 bg-yellow-50 border border-yellow-300 p-4 rounded-lg text-center">
-                      <h3 className="text-lg font-bold text-yellow-800">Action Required</h3>
-                      <p className="text-yellow-700 mt-2 text-sm">
-                        This task is awaiting payment to be assigned to{' '}
-                        <strong className="block mt-1">{bids.find(b => b.status === 'Accepted')?.provider.name || 'the provider'}</strong>.
-                      </p>
-                      <button
-                        onClick={handleResumePayment}
-                        className="w-full mt-4 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700"
-                      >
-                        Pay Now to Assign
-                      </button>
-                    </div>
-                  )}
-
-                  {user && isOwner && task.status === 'Open' && (
-                    <div className="mt-6">
-                      <h3 className="text-xl font-bold text-gray-800 mb-4">Bids Received ({bids.length})</h3>
-                      <div className="space-y-4">
-                        {bids.length > 0 ? bids.map(bid => (
-                          <div key={bid._id} className="bg-white p-4 border rounded-lg">
-                            <p className="font-bold text-lg">₹{bid.amount}</p>
-                            <p className="text-sm text-gray-600 my-2">by {bid.provider.name} (⭐ {bid.provider.averageRating?.toFixed(1) || 'New'})</p>
-                            <button onClick={() => handleAcceptBidClick(bid)} className="w-full text-sm bg-green-500 text-white py-2 rounded hover:bg-green-600">
-                              Accept Bid
-                            </button>
-                          </div>
-                        )) : <p className="text-gray-500">No bids yet.</p>}
-                      </div>
-                    </div>
-                  )}
-
-                  {user && (isOwner || isAssignedProvider) && task.status === 'Assigned' && (
-                    <div className="mt-6">
-                      <button onClick={() => setIsChatOpen(true)} className="w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700">
-                        Chat with {chatRecipient?.name}
-                      </button>
-                      {isOwner && (
-                        <button onClick={handleCompleteTask} className="w-full mt-4 py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600">
-                          Mark as Complete
-                        </button>
+                  {/* --- TASK SEEKER'S VIEW --- */}
+                  {user && isOwner && (
+                    <>
+                      {task.status === 'Pending Payment' && (
+                        <div className="mt-6 bg-yellow-50 border border-yellow-300 p-4 rounded-lg text-center">
+                          <h3 className="text-lg font-bold text-yellow-800">Action Required</h3>
+                          <p className="text-yellow-700 mt-2 text-sm">
+                            This task is awaiting payment to be assigned to{' '}
+                            <strong className="block mt-1">{bids.find(b => b.status === 'Accepted')?.provider.name || 'the provider'}</strong>.
+                          </p>
+                          <button
+                            onClick={handleResumePayment}
+                            className="w-full mt-4 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700"
+                          >
+                            Pay Now to Assign
+                          </button>
+                        </div>
                       )}
-                    </div>
+                      {task.status === 'Open' && (
+                        <div className="mt-6">
+                          <h3 className="text-xl font-bold text-gray-800 mb-4">Bids Received ({bids.length})</h3>
+                          <div className="space-y-4">
+                            {bids.length > 0 ? bids.map(bid => (
+                              <div key={bid._id} className="bg-white p-4 border rounded-lg">
+                                <p className="font-bold text-lg">₹{bid.amount}</p>
+                                <p className="text-sm text-gray-600 my-2">by {bid.provider.name} (⭐ {bid.provider.averageRating?.toFixed(1) || 'New'})</p>
+                                <button onClick={() => handleAcceptBidClick(bid)} className="w-full text-sm bg-green-500 text-white py-2 rounded hover:bg-green-600">
+                                  Accept Bid
+                                </button>
+                              </div>
+                            )) : <p className="text-gray-500">No bids yet.</p>}
+                          </div>
+                        </div>
+                      )}
+                       {task.status === 'CompletedByProvider' && (
+                        <div className="mt-6">
+                          <p className="text-center text-sm text-gray-600 mb-2">The provider has marked this task as complete.</p>
+                          <button onClick={handleSeekerConfirm} className="w-full py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700">
+                            Confirm & Release Payment
+                          </button>
+                        </div>
+                      )}
+                    </>
                   )}
 
-                  {user && !isOwner && task.status === 'Open' && (
+                  {/* --- ASSIGNED PROVIDER'S VIEW --- */}
+                  {user && isAssignedProvider && task.status === 'Assigned' && (
+                    <div className="mt-6">
+                        <button onClick={handleProviderComplete} className="w-full py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600">
+                            Mark as Complete
+                        </button>
+                    </div>
+                  )}
+                  
+                  {/* --- SHARED VIEW (CHAT BUTTON) --- */}
+                  {user && (isOwner || isAssignedProvider) && (task.status === 'Assigned' || task.status === 'CompletedByProvider') && (
+                     <div className="mt-4">
+                        <button onClick={() => setIsChatOpen(true)} className="w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700">
+                            Chat with {chatRecipient?.name}
+                        </button>
+                     </div>
+                  )}
+
+                  {/* --- UNRELATED USER'S VIEW --- */}
+                  {user && !isOwner && !isAssignedProvider && task.status === 'Open' && (
                      <PlaceBidForm taskId={task._id} onBidPlaced={fetchTaskData} />
                   )}
                 </>
