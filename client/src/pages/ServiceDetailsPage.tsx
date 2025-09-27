@@ -117,12 +117,12 @@ const ServiceDetailsPage = () => {
         bidAmount={service.price}
       />
 
-      <PaymentModal
-        isOpen={isPaymentModalOpen}
-        onClose={() => setIsPaymentModalOpen(false)}
-        clientSecret={clientSecret}
-        onPaymentSuccess={handlePaymentSuccess}
-      />
+<PaymentModal
+  isOpen={isPaymentModalOpen}
+  onClose={() => setIsPaymentModalOpen(false)}
+  clientSecret={clientSecret}
+  onPaymentSuccess={handlePaymentSuccess}
+/>
       <Footer />
     </div>
   );

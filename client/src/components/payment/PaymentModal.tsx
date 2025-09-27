@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { loadStripe, StripeError } from '@stripe/stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import toast from 'react-hot-toast';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_KEY);
 
 interface CheckoutFormProps {
   onSuccessfulPayment: () => void;
-  clientSecret: string; // Pass clientSecret to the form
+  clientSecret: string;
 }
 
 const CheckoutForm = ({ onSuccessfulPayment, clientSecret }: CheckoutFormProps) => {
@@ -20,21 +20,22 @@ const CheckoutForm = ({ onSuccessfulPayment, clientSecret }: CheckoutFormProps) 
     if (!stripe) {
       return;
     }
-    // Retrieve the PaymentIntent to check its status
+    // Immediately retrieve the PaymentIntent to check its status upon loading
     stripe.retrievePaymentIntent(clientSecret).then(({ paymentIntent }) => {
       switch (paymentIntent?.status) {
         case "succeeded":
-          setMessage("Payment succeeded!");
+          // If already paid, trigger success immediately.
           onSuccessfulPayment();
           break;
         case "processing":
           setMessage("Your payment is processing.");
           break;
         case "requires_payment_method":
-          // This is the expected state, do nothing
+          // This is the normal, expected state. Clear any previous messages.
+          setMessage(null);
           break;
         default:
-          setMessage("Something went wrong.");
+          setMessage("Something went wrong. Please try again.");
           break;
       }
     });
@@ -52,10 +53,12 @@ const CheckoutForm = ({ onSuccessfulPayment, clientSecret }: CheckoutFormProps) 
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
+        // Redirect back to the dashboard after payment is confirmed by Stripe
         return_url: `${window.location.origin}/dashboard`,
       },
-      // If you want to handle the redirect manually instead of Stripe doing it
-      // redirect: 'if_required' 
+      // This option tells Stripe to handle the redirect only if required for authentication (like 3D Secure)
+      // If not required, the promise will resolve here after success.
+      redirect: 'if_required' 
     });
 
     if (error) {
@@ -64,17 +67,17 @@ const CheckoutForm = ({ onSuccessfulPayment, clientSecret }: CheckoutFormProps) 
       } else {
         setMessage("An unexpected error occurred.");
       }
+      setIsProcessing(false);
     } else {
-        // This point is typically only reached if redirect: 'if_required' is used
-        onSuccessfulPayment();
+      // If confirmPayment resolves without an error, it was successful.
+      onSuccessfulPayment();
+      // No need to set isProcessing to false here, as the modal will close.
     }
-
-    setIsProcessing(false);
   };
 
   return (
     <form onSubmit={handleSubmit}>
-      <PaymentElement />
+      <PaymentElement id="payment-element" />
       <button
         disabled={isProcessing || !stripe || !elements}
         className="w-full mt-6 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 disabled:bg-indigo-400"
@@ -82,12 +85,11 @@ const CheckoutForm = ({ onSuccessfulPayment, clientSecret }: CheckoutFormProps) 
         {isProcessing ? 'Processing…' : 'Pay Now'}
       </button>
 
-      {/* Show any error or success messages */}
-      {message && <div id="payment-message" className="text-sm text-red-500 mt-2">{message}</div>}
+      {/* Show any error or status messages */}
+      {message && <div id="payment-message" className="text-sm text-red-500 mt-2 text-center">{message}</div>}
     </form>
   );
 };
-
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -109,7 +111,7 @@ const PaymentModal = ({ isOpen, onClose, clientSecret, onPaymentSuccess }: Payme
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Confirm Payment</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">Confirm Payment</h2>
         <Elements stripe={stripePromise} options={options}>
           <CheckoutForm onSuccessfulPayment={onPaymentSuccess} clientSecret={clientSecret} />
         </Elements>

@@ -34,8 +34,8 @@ const createStripeOnboardingLink = asyncHandler(async (req, res) => {
 
     const accountLink = await stripe.accountLinks.create({
       account: stripeAccountId,
-      refresh_url: `http://localhost:3000/dashboard`,
-      return_url: `http://localhost:3000/dashboard`,
+    refresh_url: `${process.env.CLIENT_URL}/dashboard`,
+    return_url: `${process.env.CLIENT_URL}/dashboard`,
       type: 'account_onboarding',
     });
 
