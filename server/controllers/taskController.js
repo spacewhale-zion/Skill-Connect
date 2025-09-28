@@ -7,6 +7,8 @@ import { io } from '../server.js';
 import { onlineUsers } from '../sockets/socketHandler.js';
 import { sendPushNotification } from '../services/notificationService.js';
 import { createPaymentIntent, stripe } from '../services/paymentService.js';
+import Service from '../models/Service.js';
+
 
 /**
  * @desc    Create a new task
@@ -265,6 +267,15 @@ const completeTask = asyncHandler(async (req, res) => {
   task.status = 'Completed';
   task.completedAt = Date.now();
   const updatedTask = await task.save();
+
+    if (task.originatingService) {
+        const service = await Service.findById(task.originatingService);
+        if (service) {
+            service.isActive = true;
+            console.log(service.isActive);
+            await service.save();
+        }
+    }
   
     if (task.assignedProvider) {
         const notificationTitle = 'Payment released!';
@@ -304,6 +315,51 @@ const getMyAssignedTasks = asyncHandler(async (req, res) => {
   res.status(200).json(tasks);
 });
 
+
+/**
+ * @desc    Cancel a task
+ * @route   PUT /api/tasks/:id/cancel
+ * @access  Private
+ */
+const cancelTask = asyncHandler(async (req, res) => {
+  const task = await Task.findById(req.params.id);
+
+  if (!task) {
+    res.status(404);
+    throw new Error('Task not found');
+  }
+
+  const userId = req.user._id.toString();
+  const taskSeekerId = task.taskSeeker.toString();
+  const assignedProviderId = task.assignedProvider ? task.assignedProvider.toString() : null;
+
+  // Allow either the task seeker or the assigned provider to cancel
+  if (userId !== taskSeekerId && userId !== assignedProviderId) {
+    res.status(401);
+    throw new Error('User not authorized to cancel this task');
+  }
+  
+    // Prevent cancellation if the task is already completed or cancelled
+  if (task.status === 'Completed' || task.status === 'Cancelled') {
+      res.status(400);
+      throw new Error(`Cannot cancel a task that is already ${task.status}.`);
+  }
+
+  task.status = 'Cancelled';
+
+  // If the task originated from a service, make the service active again
+  if (task.originatingService) {
+    const service = await Service.findById(task.originatingService);
+    if (service) {
+      service.isActive = true;
+      await service.save();
+    }
+  }
+
+  const updatedTask = await task.save();
+  res.json(updatedTask);
+});
+
 export {
   createTask,
   getTasks,
@@ -313,5 +369,6 @@ export {
   getMyAssignedTasks,
   getMyPostedTasks,
   getPaymentDetailsForTask,
-  markCompletedByProvider
+  markCompletedByProvider,
+  cancelTask
 };

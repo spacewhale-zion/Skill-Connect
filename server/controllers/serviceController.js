@@ -2,6 +2,11 @@ import asyncHandler from 'express-async-handler';
 import Service from '../models/Service.js';
 import Task from '../models/Task.js';
 import { createPaymentIntent } from '../services/paymentService.js';
+import Notification from '../models/Notification.js';
+import User from '../models/User.js';
+import { io } from '../server.js';
+import { onlineUsers } from '../sockets/socketHandler.js';
+import { sendPushNotification } from '../services/notificationService.js';
 
 /**
  * @desc    Create a new service
@@ -112,18 +117,24 @@ const getServices = asyncHandler(async (req, res) => {
  * @access  Private
  */
 const bookService = asyncHandler(async (req, res) => {
-  const { paymentMethod } = req.body;
+const { paymentMethod } = req.body;
   const service = await Service.findById(req.params.id);
-  const taskSeeker = req.user;
 
   if (!service) {
     res.status(404);
     throw new Error('Service not found.');
   }
-  
+
+  if (!service.isActive) {
+    res.status(400);
+    throw new Error('This service is currently unavailable.');
+  }
+
+  const taskSeeker = req.user;
+
   if (service.provider.equals(taskSeeker._id)) {
-      res.status(400);
-      throw new Error('You cannot book your own service.');
+    res.status(400);
+    throw new Error('You cannot book your own service.');
   }
 
   let task;
@@ -162,7 +173,6 @@ const bookService = asyncHandler(async (req, res) => {
       originatingService: service._id,
     });
   }
-
   // --- NOTIFICATION LOGIC ---
   const notificationTitle = 'Your service has been booked!';
   const notificationBody = `${taskSeeker.name} has booked your service: "${service.title}"`;
@@ -184,6 +194,9 @@ const bookService = asyncHandler(async (req, res) => {
       await sendPushNotification(provider.fcmToken, notificationTitle, notificationBody, { taskId: task._id.toString(), type: 'SERVICE_BOOKED' });
     }
   }
+
+  service.isActive = false;
+  await service.save();
 
   res.status(201).json({
     task,
@@ -211,5 +224,28 @@ const getServiceById = asyncHandler(async (req, res) => {
   }
 });
 
+
+/**
+ * @desc    Delete a service
+ * @route   DELETE /api/services/:id
+ * @access  Private
+ */
+const deleteService = asyncHandler(async (req, res) => {
+  const service = await Service.findById(req.params.id);
+
+  if (service) {
+    if (service.provider.toString() !== req.user._id.toString()) {
+      res.status(401);
+      throw new Error('User not authorized');
+    }
+
+    await service.deleteOne();
+    res.json({ message: 'Service removed' });
+  } else {
+    res.status(404);
+    throw new Error('Service not found');
+  }
+});
+
 // Add the new function to the exports
-export { createService, getServices, bookService, getMyServices, getServiceById };
+export { createService, getServices, bookService, getMyServices, getServiceById, deleteService };

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext.tsx';
-import { getTaskById, assignTask, completeTask, getTaskPaymentDetails, markTaskAsCompletedByProvider } from '../services/taskServices.ts';
+import { getTaskById, assignTask, completeTask, getTaskPaymentDetails,cancelTask, markTaskAsCompletedByProvider } from '../services/taskServices.ts';
 import { getBidsForTask } from '../services/bidServices.ts';
 import toast from 'react-hot-toast';
 import Navbar from '../components/layout/Navbar.tsx';
@@ -30,6 +30,8 @@ const TaskDetailsPage = () => {
   const [isPaymentMethodModalOpen, setIsPaymentMethodModalOpen] = useState(false);
   const [selectedBid, setSelectedBid] = useState<Bid | null>(null);
   const { socket } = useNotifications();
+
+  
 
   const fetchTaskData = useCallback(async () => {
     if (!taskId) return;
@@ -90,6 +92,22 @@ const TaskDetailsPage = () => {
       }
     } catch (error) {
       toast.error('Failed to assign task. Please try again.');
+    }
+  };
+
+   const handleCancelTask = async () => {
+    if (window.confirm('Are you sure you want to cancel this task?')) {
+      try {
+        if (taskId) {
+          await cancelTask(taskId);
+        } else {
+          toast.error('Task ID is missing. Unable to cancel task.');
+        }
+        toast.success('Task cancelled successfully');
+        fetchTaskData();
+      } catch (error) {
+        toast.error('Failed to cancel task.');
+      }
     }
   };
 
@@ -266,13 +284,16 @@ const TaskDetailsPage = () => {
                   )}
 
                   {/* --- TASK PROVIDER'S VIEW --- */}
-                  {user && isAssignedProvider && task.status === 'Assigned' && (
-                    <div className="mt-6">
-                        <button onClick={handleProviderComplete} className="w-full py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700">
-                            Mark as Complete
-                        </button>
-                    </div>
-                  )}
+               {user && isAssignedProvider && task.status === 'Assigned' && (
+          <div className="mt-6">
+              <button onClick={handleProviderComplete} className="w-full py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700">
+                  Mark as Complete
+              </button>
+              <button onClick={handleCancelTask} className="w-full mt-2 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700">
+                  Cancel Task
+              </button>
+          </div>
+        )}
                   
                   {/* --- SHARED VIEW (CHAT BUTTON) --- */}
                   {user && (isOwner || isAssignedProvider) && (task.status === 'Assigned' || task.status === 'CompletedByProvider') && (

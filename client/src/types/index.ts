@@ -84,6 +84,7 @@ export interface Service {
     name: string;
     averageRating?: number;
   };
+  // status:'Open' | 'Booked';
   title: string;
   description: string;
   category: string;

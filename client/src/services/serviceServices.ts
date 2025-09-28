@@ -66,3 +66,13 @@ export const getServiceById = async (serviceId: string): Promise<Service> => {
   const { data } = await api.get(`/services/${serviceId}`);
   return data;
 };
+
+
+/**
+ * Deletes a service.
+ * Corresponds to: DELETE /api/services/:id
+ * @param serviceId The ID of the service to delete.
+ */
+export const deleteService = async (serviceId: string): Promise<void> => {
+  await api.delete(`/services/${serviceId}`);
+};

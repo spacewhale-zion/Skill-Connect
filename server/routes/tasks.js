@@ -11,6 +11,7 @@ import {
   getMyAssignedTasks,
   getPaymentDetailsForTask,
   markCompletedByProvider, // Import the new controller
+  cancelTask
 } from '../controllers/taskController.js';
 
 import { createBid, getBidsForTask } from '../controllers/bidController.js';
@@ -37,6 +38,7 @@ router.route('/:id/complete').put(protect, completeTask);
 router.route('/:taskId/bids')
   .post(protect, createBid)
   .get(protect, getBidsForTask);
+router.route('/:id/cancel').put(protect, cancelTask);
 
 router.route('/:taskId/review').post(protect, createReview);
 

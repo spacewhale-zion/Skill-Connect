@@ -89,3 +89,8 @@ export const getMyAssignedTasks = async (): Promise<Task[]> => {
   const { data } = await api.get('/tasks/assignedtome');
   return data;
 };
+
+export const cancelTask = async (taskId: string): Promise<Task> => {
+  const { data } = await api.put(`/tasks/${taskId}/cancel`);
+  return data;
+};
