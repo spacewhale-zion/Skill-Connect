@@ -21,10 +21,12 @@ const userSchema = new mongoose.Schema(
       type:String,
       default:""
     },
-    profilePicture: {
-      type: String,
-      default: '', // Optional: Add a default avatar URL
-    },
+   profilePicture: {
+  type: String,
+  default: function () {
+    return `https://ui-avatars.com/api/?name=${this.name}&background=random&size=128`;
+  },
+},
     // GeoJSON Point for geospatial queries
     location: {
       type: {

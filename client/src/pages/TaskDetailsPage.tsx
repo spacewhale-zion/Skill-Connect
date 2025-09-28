@@ -30,6 +30,7 @@ const TaskDetailsPage = () => {
   const [isPaymentMethodModalOpen, setIsPaymentMethodModalOpen] = useState(false);
   const [selectedBid, setSelectedBid] = useState<Bid | null>(null);
   const { socket } = useNotifications();
+  
 
   
 
@@ -147,6 +148,7 @@ const TaskDetailsPage = () => {
     try {
       const updatedTask = await completeTask(taskId);
       setTask(updatedTask); // Use the fresh data
+
       toast.success('Task confirmed! Please leave a review for the provider.');
       if (updatedTask.assignedProvider) {
         setReviewee({ id: updatedTask.assignedProvider._id, name: updatedTask.assignedProvider.name });
@@ -160,6 +162,7 @@ const TaskDetailsPage = () => {
         }
     }
   };
+  
 
   const handleReviewSubmitted = (updatedReviewee: AuthUser) => {
     setIsReviewModalOpen(false);
@@ -204,22 +207,29 @@ const TaskDetailsPage = () => {
                 <div className="mt-8">
                   <h2 className="text-2xl font-semibold text-gray-700 mb-4">Reviews</h2>
                   <div className="space-y-4">
-                    {task.reviews.map(review => (
-                      <div key={review._id} className="bg-gray-50 p-4 rounded-lg">
-                        <div className="flex items-center mb-2">
-                          <img 
-                            src={review.reviewer.profilePicture || `https://ui-avatars.com/api/?name=${review.reviewer.name}&background=random&size=128`} 
-                            alt={review.reviewer.name}
-                            className="w-10 h-10 rounded-full mr-3"
-                          />
-                          <div>
-                            <p className="font-bold">{review.reviewer.name}</p>
-                            <p className="text-yellow-500">{'⭐'.repeat(review.rating)}</p>
-                          </div>
-                        </div>
-                        <p className="text-gray-600">{review.comment}</p>
-                      </div>
-                    ))}
+                   
+                  {task.reviews.map(review => {
+  const reviewer = review.reviewer as any; // could be object or string
+  return (
+    <div key={review._id} className="bg-gray-50 p-4 rounded-lg">
+      <div className="flex items-center mb-2">
+        <img 
+          src={typeof reviewer === "object" && reviewer?.profilePicture
+            ? reviewer.profilePicture
+            : `https://ui-avatars.com/api/?name=${typeof reviewer === "object" ? reviewer.name : "User"}&background=random&size=128`}
+          alt={typeof reviewer === "object" ? reviewer.name : "Anonymous"}
+          className="w-10 h-10 rounded-full mr-3"
+        />
+        <div>
+          <p className="font-bold">{typeof reviewer === "object" ? reviewer.name : "Anonymous"}</p>
+          <p className="text-yellow-500">{'⭐'.repeat(review.rating)}</p>
+        </div>
+      </div>
+      <p className="text-gray-600">{review.comment}</p>
+    </div>
+  )
+})}
+
                   </div>
                 </div>
               )}

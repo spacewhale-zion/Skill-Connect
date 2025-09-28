@@ -264,6 +264,12 @@ const completeTask = asyncHandler(async (req, res) => {
     }
   }
 
+
+  if (task.paymentMethod === 'Cash'){
+   task.paid = true;
+    
+  }
+
   task.status = 'Completed';
   task.completedAt = Date.now();
   const updatedTask = await task.save();
