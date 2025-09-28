@@ -1,4 +1,4 @@
-// spacewhale-zion/skill-connect/Skill-Connect-7116ae5702cce0b0c74858586a22e6d652228ad1/server/routes/tasks.js
+// spacewhale-zion/skill-connect/Skill-Connect-8d5e060725284c7b119a64381a1e39067c5f2b04/server/routes/tasks.js
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
 import {
@@ -31,7 +31,7 @@ router.route('/:id')
 router.route('/:id/payment-details').get(protect, getPaymentDetailsForTask);
 
 router.route('/:id/assign').put(protect, assignTask);
-router.route('/:id/complete-by-provider').put(protect, markCompletedByProvider); // Add new route
+router.route('/:id/complete-by-provider').put(protect, markCompletedByProvider); // Corrected route
 router.route('/:id/complete').put(protect, completeTask);
 
 router.route('/:taskId/bids')

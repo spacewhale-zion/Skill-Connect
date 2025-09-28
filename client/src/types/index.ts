@@ -111,7 +111,7 @@ export interface Task {
   _id: string;
   title: string;
   description: string;
-  status: 'Open' | 'Assigned' | 'Completed' | 'Cancelled'| 'Pending Payment' | 'CompletedByProvider';
+  status: 'Open' | 'Assigned' | 'Completed' | 'Cancelled'| 'Pending Payment' | 'CompletedByProvider' | 'CompletedBySeeker';
   category: string;
   budget: {
     amount: number;

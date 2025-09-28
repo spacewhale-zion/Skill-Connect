@@ -103,7 +103,46 @@ const getTaskById = asyncHandler(async (req, res) => {
  * @access  Private (Task Seeker only)
  */
 const assignTask = asyncHandler(async (req, res) => {
-    // ... (This function remains the same as previously provided)
+    const task = await Task.findById(req.params.id);
+
+    if (!task) {
+        res.status(404);
+        throw new Error('Task not found.');
+    }
+    if (!task.taskSeeker.equals(req.user._id)) {
+        res.status(403);
+        throw new Error('You are not authorized to assign this task.');
+    }
+    if (task.status !== 'Open') {
+        res.status(400);
+        throw new Error('Task is not open for assignment.');
+    }
+
+    const { providerId, bidId, paymentMethod } = req.body;
+    const bid = await Bid.findById(bidId);
+
+    if (!bid || !bid.task.equals(task._id) || !bid.provider.equals(providerId)) {
+        res.status(400);
+        throw new Error('Invalid bid details.');
+    }
+
+    task.assignedProvider = providerId;
+    bid.status = 'Accepted';
+    await bid.save();
+
+    if (paymentMethod === 'Cash') {
+        task.paymentMethod = 'Cash';
+        task.status = 'Assigned';
+        await task.save();
+        res.status(200).json({ task, clientSecret: null });
+    } else {
+        const paymentIntent = await createPaymentIntent(bid.amount);
+        task.paymentIntentId = paymentIntent.id;
+        task.paymentMethod = 'Stripe';
+        task.status = 'Pending Payment';
+        await task.save();
+        res.status(200).json({ task, clientSecret: paymentIntent.client_secret });
+    }
 });
 
 /**
@@ -112,7 +151,23 @@ const assignTask = asyncHandler(async (req, res) => {
  * @access  Private (Task Seeker only)
  */
 const getPaymentDetailsForTask = asyncHandler(async (req, res) => {
-    // ... (This function remains the same as previously provided)
+    const task = await Task.findById(req.params.id);
+
+    if (!task) {
+        res.status(404);
+        throw new Error('Task not found.');
+    }
+    if (!task.taskSeeker.equals(req.user._id)) {
+        res.status(403);
+        throw new Error('You are not authorized to view these details.');
+    }
+    if (!task.paymentIntentId) {
+        res.status(400);
+        throw new Error('No payment details found for this task.');
+    }
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(task.paymentIntentId);
+    res.status(200).json({ clientSecret: paymentIntent.client_secret });
 });
 
 /**

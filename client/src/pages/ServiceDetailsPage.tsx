@@ -2,14 +2,15 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
 import { getServiceById, bookService } from '../services/serviceServices';
-import { getTaskById, completeTask } from '../services/taskServices'; // Import task services
+import { getTaskById, markTaskAsCompletedByProvider, completeTask } from '../services/taskServices';
 import toast from 'react-hot-toast';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import MapView from '../components/map/MapView';
 import PaymentModal from '../components/payment/PaymentModal';
 import PaymentMethodModal from '../components/payment/PaymentMethodModal';
-import { Service, Task } from '../types'; // Import Task type
+import SubmitReviewModal from '../components/reviews/SubmitReviewmodal';
+import { Service, Task, AuthUser } from '../types';
 import { useNotifications } from '../context/notificationContext';
 
 const ServiceDetailsPage = () => {
@@ -19,12 +20,15 @@ const ServiceDetailsPage = () => {
   const { socket } = useNotifications();
 
   const [service, setService] = useState<Service | null>(null);
-  const [task, setTask] = useState<Task | null>(null); // State to hold the associated task
+  const [task, setTask] = useState<Task | null>(null);
   const [createdTaskId, setCreatedTaskId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [clientSecret, setClientSecret] = useState('');
   const [isPaymentMethodModalOpen, setIsPaymentMethodModalOpen] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewee, setReviewee] = useState<{ id: string, name: string } | null>(null);
+
 
   const fetchServiceAndTask = useCallback(async () => {
     if (!serviceId) return;
@@ -32,36 +36,26 @@ const ServiceDetailsPage = () => {
     try {
       const serviceData = await getServiceById(serviceId);
       setService(serviceData);
-      // If a task has been created from this service, fetch its details
+      
+      // A service might be booked multiple times, creating multiple tasks.
+      // For this page, we are interested in the task created by the current user.
+      // This is a simplified approach; a real-world app might need to list all bookings.
       if (serviceData.originatingTask) {
           const taskData = await getTaskById(serviceData.originatingTask);
-          setTask(taskData);
+          if (taskData.taskSeeker._id === user?._id) {
+            setTask(taskData);
+          }
       }
     } catch (error) {
       toast.error('Could not load service details.');
     } finally {
       setLoading(false);
     }
-  }, [serviceId]);
+  }, [serviceId, user]);
 
   useEffect(() => {
     fetchServiceAndTask();
   }, [fetchServiceAndTask]);
-
-  useEffect(() => {
-    if (socket && createdTaskId) {
-      const handlePaymentSuccess = (data: { taskId: string }) => {
-        if (data.taskId === createdTaskId) {
-          toast.success('Service booked successfully! You can view it in your dashboard.');
-          navigate('/dashboard');
-        }
-      };
-      socket.on('payment_success', handlePaymentSuccess);
-      return () => {
-        socket.off('payment_success', handlePaymentSuccess);
-      };
-    }
-  }, [socket, createdTaskId, navigate]);
 
   const handleBookNowClick = () => {
     if (!user) {
@@ -82,7 +76,7 @@ const ServiceDetailsPage = () => {
             setClientSecret(res.clientSecret);
             setIsPaymentModalOpen(true);
         } else {
-            toast.success('Service booked successfully! You have agreed to pay in cash.');
+            toast.success('Service booked successfully! You can view it in your dashboard.');
             navigate('/dashboard');
         }
     } catch (error) {
@@ -92,21 +86,40 @@ const ServiceDetailsPage = () => {
 
   const handlePaymentSuccess = () => {
     setIsPaymentModalOpen(false);
-    toast.success('Payment submitted! Waiting for server confirmation...');
+    toast.success('Payment submitted! Refreshing...');
+    fetchServiceAndTask();
   };
   
+  const handleProviderComplete = async () => {
+    if (!task?._id || !task.taskSeeker) return;
+    try {
+      const updatedTask = await markTaskAsCompletedByProvider(task._id);
+      setTask(updatedTask);
+      toast.success('Service marked as complete! Please review the client.');
+      setReviewee({ id: task.taskSeeker._id, name: task.taskSeeker.name });
+      setIsReviewModalOpen(true);
+    } catch (error) {
+      toast.error('Failed to mark service as complete.');
+    }
+  };
+
   const handleSeekerConfirm = async () => {
-    if (!task?._id) return;
+    if (!task?._id || !task.assignedProvider) return;
     try {
       const updatedTask = await completeTask(task._id);
-      setTask(updatedTask); // Update the task state
-      toast.success('Task confirmed and payment released!');
-      // Optionally, you can open the review modal here
+      setTask(updatedTask);
+      toast.success('Service confirmed! Please review the provider.');
+      setReviewee({ id: task.assignedProvider._id, name: task.assignedProvider.name });
+      setIsReviewModalOpen(true);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to confirm completion.');
     }
   };
-
+  
+  const handleReviewSubmitted = () => {
+      setIsReviewModalOpen(false);
+      fetchServiceAndTask();
+  };
 
   if (loading) return <div>Loading...</div>;
   if (!service) return <div>Service not found.</div>;
@@ -136,30 +149,38 @@ const ServiceDetailsPage = () => {
                 <p className="text-sm text-gray-500">Fixed Price</p>
                 <p className="text-3xl font-extrabold text-indigo-600">₹{service.price}</p>
                 
-                {!task && !isProvider && (
-                    <button
-                        onClick={handleBookNowClick}
-                        className="w-full mt-6 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700"
-                    >
-                        Book Now
-                    </button>
-                )}
-
-                {task && (
+                {task ? (
                     <div className="mt-4">
-                        <p className="text-sm text-gray-500">Status</p>
+                        <p className="text-sm text-gray-500">Booking Status</p>
                         <p className="text-lg font-bold text-gray-800">{task.status}</p>
                     </div>
+                ) : (
+                    !isProvider && (
+                        <button
+                            onClick={handleBookNowClick}
+                            className="w-full mt-6 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700"
+                        >
+                            Book Now
+                        </button>
+                    )
                 )}
 
+                {isProvider && task?.status === 'Assigned' && (
+                    <div className="mt-6">
+                        <button onClick={handleProviderComplete} className="w-full py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700">
+                            Mark as Complete
+                        </button>
+                    </div>
+                )}
+                
                 {isBooker && task?.status === 'CompletedByProvider' && (
                     <div className="mt-6">
                         <p className="text-center text-sm text-gray-600 mb-2">The provider has marked this service as complete.</p>
                         <button
                             onClick={handleSeekerConfirm}
-                            className="w-full py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700"
+                            className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700"
                         >
-                            Confirm & Release Payment
+                            Confirm & Finalize
                         </button>
                     </div>
                 )}
@@ -182,6 +203,17 @@ const ServiceDetailsPage = () => {
         clientSecret={clientSecret}
         onPaymentSuccess={handlePaymentSuccess}
       />
+      
+      {isReviewModalOpen && reviewee && task && (
+        <SubmitReviewModal
+            isOpen={isReviewModalOpen}
+            onClose={() => setIsReviewModalOpen(false)}
+            onReviewSubmitted={handleReviewSubmitted}
+            taskId={task._id}
+            revieweeName={reviewee.name}
+        />
+      )}
+
       <Footer />
     </div>
   );

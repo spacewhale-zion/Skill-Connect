@@ -24,6 +24,7 @@ const TaskDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewee, setReviewee] = useState<{ id: string, name: string } | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [clientSecret, setClientSecret] = useState('');
   const [isPaymentMethodModalOpen, setIsPaymentMethodModalOpen] = useState(false);
@@ -112,8 +113,12 @@ const TaskDetailsPage = () => {
     if (!taskId) return;
     try {
       const updatedTask = await markTaskAsCompletedByProvider(taskId);
-      setTask(updatedTask);
-      toast.success('Task marked as complete. The seeker will be notified to confirm.');
+      setTask(updatedTask); // Use the fresh data
+      toast.success('Task marked as complete! Please leave a review for the seeker.');
+      if (updatedTask.taskSeeker) {
+        setReviewee({ id: updatedTask.taskSeeker._id, name: updatedTask.taskSeeker.name });
+        setIsReviewModalOpen(true);
+      }
     } catch (error) {
       toast.error('Failed to mark task as complete.');
     }
@@ -123,9 +128,12 @@ const TaskDetailsPage = () => {
     if (!taskId) return;
     try {
       const updatedTask = await completeTask(taskId);
-      setTask(updatedTask);
-      toast.success('Task confirmed and payment released!');
-      setIsReviewModalOpen(true);
+      setTask(updatedTask); // Use the fresh data
+      toast.success('Task confirmed! Please leave a review for the provider.');
+      if (updatedTask.assignedProvider) {
+        setReviewee({ id: updatedTask.assignedProvider._id, name: updatedTask.assignedProvider.name });
+        setIsReviewModalOpen(true);
+      }
     } catch (error: any) {
         if (error.response?.data?.message) {
             toast.error(error.response.data.message);
@@ -137,29 +145,16 @@ const TaskDetailsPage = () => {
 
   const handleReviewSubmitted = (updatedReviewee: AuthUser) => {
     setIsReviewModalOpen(false);
+    setReviewee(null);
+    toast.success("Review submitted!");
     
-    setTask(prevTask => {
-      if (!prevTask) return null;
-      const newAssignedProvider =
-        prevTask.assignedProvider?._id === updatedReviewee._id
-          ? { ...prevTask.assignedProvider, averageRating: updatedReviewee.averageRating }
-          : prevTask.assignedProvider;
-      const newTaskSeeker =
-        prevTask.taskSeeker._id === updatedReviewee._id
-          ? { ...prevTask.taskSeeker, averageRating: updatedReviewee.averageRating }
-          : prevTask.taskSeeker;
-      return {
-        ...prevTask,
-        assignedProvider: newAssignedProvider,
-        taskSeeker: newTaskSeeker,
-      };
-    });
+    // Simply refetch all data from the server to ensure UI is consistent
+    fetchTaskData(); 
 
+    // Update the auth context if the current user was the one being reviewed
     if (user && user._id === updatedReviewee._id) {
       updateUser({ averageRating: updatedReviewee.averageRating });
-      toast.success("Your new average rating is updated!");
     }
-    fetchTaskData();
   };
 
   if (loading) return <div>Loading...</div>;
@@ -225,24 +220,9 @@ const TaskDetailsPage = () => {
               </div>
 
                 <>
-                  {/* --- TASK SEEKER'S VIEW --- */}
+                  {/* --- TASK SEEKER'S VIEW (Owner) --- */}
                   {user && isOwner && (
                     <>
-                      {task.status === 'Pending Payment' && (
-                        <div className="mt-6 bg-yellow-50 border border-yellow-300 p-4 rounded-lg text-center">
-                          <h3 className="text-lg font-bold text-yellow-800">Action Required</h3>
-                          <p className="text-yellow-700 mt-2 text-sm">
-                            This task is awaiting payment to be assigned to{' '}
-                            <strong className="block mt-1">{bids.find(b => b.status === 'Accepted')?.provider.name || 'the provider'}</strong>.
-                          </p>
-                          <button
-                            onClick={handleResumePayment}
-                            className="w-full mt-4 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700"
-                          >
-                            Pay Now to Assign
-                          </button>
-                        </div>
-                      )}
                       {task.status === 'Open' && (
                         <div className="mt-6">
                           <h3 className="text-xl font-bold text-gray-800 mb-4">Bids Received ({bids.length})</h3>
@@ -262,18 +242,33 @@ const TaskDetailsPage = () => {
                        {task.status === 'CompletedByProvider' && (
                         <div className="mt-6">
                           <p className="text-center text-sm text-gray-600 mb-2">The provider has marked this task as complete.</p>
-                          <button onClick={handleSeekerConfirm} className="w-full py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700">
-                            Confirm & Release Payment
+                          <button onClick={handleSeekerConfirm} className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">
+                            Confirm Completion & Release Payment
+                          </button>
+                        </div>
+                      )}
+                       {task.status === 'Pending Payment' && (
+                        <div className="mt-6 bg-yellow-50 border border-yellow-300 p-4 rounded-lg text-center">
+                          <h3 className="text-lg font-bold text-yellow-800">Action Required</h3>
+                          <p className="text-yellow-700 mt-2 text-sm">
+                            This task is awaiting payment to be assigned to{' '}
+                            <strong className="block mt-1">{bids.find(b => b.status === 'Accepted')?.provider.name || 'the provider'}</strong>.
+                          </p>
+                          <button
+                            onClick={handleResumePayment}
+                            className="w-full mt-4 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700"
+                          >
+                            Pay Now to Assign
                           </button>
                         </div>
                       )}
                     </>
                   )}
 
-                  {/* --- ASSIGNED PROVIDER'S VIEW --- */}
+                  {/* --- TASK PROVIDER'S VIEW --- */}
                   {user && isAssignedProvider && task.status === 'Assigned' && (
                     <div className="mt-6">
-                        <button onClick={handleProviderComplete} className="w-full py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600">
+                        <button onClick={handleProviderComplete} className="w-full py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700">
                             Mark as Complete
                         </button>
                     </div>
@@ -303,13 +298,13 @@ const TaskDetailsPage = () => {
         <ChatWindow taskId={task._id} recipient={chatRecipient} onClose={() => setIsChatOpen(false)} />
       )}
 
-      {isReviewModalOpen && task && (isOwner ? task.assignedProvider : task.taskSeeker) && (
+      {isReviewModalOpen && reviewee && (
         <SubmitReviewModal
           isOpen={isReviewModalOpen}
           onClose={() => setIsReviewModalOpen(false)}
           onReviewSubmitted={handleReviewSubmitted}
           taskId={task._id}
-          revieweeName={isOwner ? task.assignedProvider!.name : task.taskSeeker.name}
+          revieweeName={reviewee.name}
         />
       )}
 

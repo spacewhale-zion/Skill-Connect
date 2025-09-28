@@ -112,7 +112,7 @@ const getServices = asyncHandler(async (req, res) => {
  * @access  Private
  */
 const bookService = asyncHandler(async (req, res) => {
-  const { paymentMethod } = req.body; // <-- Get payment method from request
+  const { paymentMethod } = req.body;
   const service = await Service.findById(req.params.id);
   const taskSeeker = req.user;
 
@@ -126,10 +126,11 @@ const bookService = asyncHandler(async (req, res) => {
       throw new Error('You cannot book your own service.');
   }
 
-  // --- NEW LOGIC FOR PAYMENT METHOD ---
+  let task;
+  let clientSecret = null;
+
   if (paymentMethod === 'Cash') {
-    // For cash, create an 'Assigned' task directly
-    const task = await Task.create({
+    task = await Task.create({
       title: service.title,
       description: `Instantly booked service: ${service.description}`,
       category: service.category,
@@ -137,18 +138,16 @@ const bookService = asyncHandler(async (req, res) => {
       location: service.location,
       taskSeeker: taskSeeker._id,
       assignedProvider: service.provider,
-      status: 'Assigned', // Directly assigned
+      status: 'Assigned',
       paymentMethod: 'Cash',
       isInstantBooking: true,
       originatingService: service._id,
     });
-    res.status(201).json({ task, clientSecret: null });
-
   } else {
-    // Default to Stripe
     const paymentIntent = await createPaymentIntent(service.price);
+    clientSecret = paymentIntent.client_secret;
 
-    const task = await Task.create({
+    task = await Task.create({
       title: service.title,
       description: `Instantly booked service: ${service.description}`,
       category: service.category,
@@ -162,12 +161,34 @@ const bookService = asyncHandler(async (req, res) => {
       isInstantBooking: true,
       originatingService: service._id,
     });
-
-    res.status(201).json({
-      task,
-      clientSecret: paymentIntent.client_secret,
-    });
   }
+
+  // --- NOTIFICATION LOGIC ---
+  const notificationTitle = 'Your service has been booked!';
+  const notificationBody = `${taskSeeker.name} has booked your service: "${service.title}"`;
+  
+  const notification = await Notification.create({
+    user: service.provider,
+    title: notificationTitle,
+    message: notificationBody,
+    link: `/tasks/${task._id}` // Link to the created task
+  });
+
+  const recipientSocketId = onlineUsers.get(service.provider.toString());
+
+  if (recipientSocketId) {
+    io.to(recipientSocketId).emit('new_notification', notification);
+  } else {
+    const provider = await User.findById(service.provider);
+    if (provider && provider.fcmToken) {
+      await sendPushNotification(provider.fcmToken, notificationTitle, notificationBody, { taskId: task._id.toString(), type: 'SERVICE_BOOKED' });
+    }
+  }
+
+  res.status(201).json({
+    task,
+    clientSecret,
+  });
 });
 
 const getMyServices = asyncHandler(async (req, res) => {
