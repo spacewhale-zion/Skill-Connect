@@ -92,18 +92,18 @@ const SkillConnectShowcase = () => {
 // Showcase Section
 const Showcase = () => {
   return (
-    <div className="bg-slate-900 h-[500px] w-full cursor-grab">
-      <Canvas camera={{ position: [0, 2, 12], fov: 50 }}>
+    <div className="bg-slate-900 h-[800px] w-full cursor-grab">
+      <Canvas camera={{ position: [0, 2, 12], fov: 70 }}>
         <Suspense fallback={null}>
           {/* Background Stars */}
-          <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+          <Stars radius={100} depth={80} count={5000} factor={4} saturation={0} fade speed={3} />
 
           <ambientLight intensity={0.6} />
-          <pointLight position={[10, 10, 10]} intensity={2} />
+          <pointLight position={[10, 10, 10]} intensity={4} />
 
           <SkillConnectShowcase />
 
-          <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.2} />
+          <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.5} />
         </Suspense>
       </Canvas>
     </div>

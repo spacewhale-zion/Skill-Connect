@@ -13,9 +13,7 @@ const FindServicesPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<ServiceSearchParams>({});
 
-//   console.log(user);
   useEffect(() => {
-    // Set initial location from user profile
     if (user?.location?.coordinates) {
       setFilters(prev => ({
         ...prev,
@@ -49,30 +47,35 @@ const FindServicesPage = () => {
     }));
   };
 
+  const inputStyles = "w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition";
+
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-slate-900 text-white">
       <Navbar />
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Browse Instant-Book Services</h1>
+      <main className="flex-grow container mx-auto px-4 py-12">
+        <div className="text-center mb-10">
+            <h1 className="text-4xl font-extrabold text-white">Browse Instant-Book Services</h1>
+            <p className="text-slate-400 mt-2">Find skilled providers ready to help you now.</p>
+        </div>
         
         {/* --- FILTER CONTROLS --- */}
-        <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 p-6 rounded-xl shadow-lg mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
                 <input
                     type="text"
                     name="keyword"
-                    placeholder="Search by keyword..."
+                    placeholder="Search by keyword (e.g., 'plumbing', 'tutor')..."
                     onChange={handleFilterChange}
-                    className="p-2 border rounded-md md:col-span-3"
+                    className={`${inputStyles} md:col-span-2`}
                 />
                 <input
                     type="number"
                     name="maxPrice"
-                    placeholder="Max Price ($)"
+                    placeholder="Max Price (₹)"
                     onChange={handleFilterChange}
-                    className="p-2 border rounded-md"
+                    className={inputStyles}
                 />
-                <select name="category" onChange={handleFilterChange} className="p-2 border rounded-md">
+                <select name="category" onChange={handleFilterChange} className={inputStyles}>
                     <option value="">All Categories</option>
                     <option value="Home Repair">Home Repair</option>
                     <option value="Gardening">Gardening</option>
@@ -80,20 +83,20 @@ const FindServicesPage = () => {
                     <option value="Delivery">Delivery</option>
                     <option value="Other">Other</option>
                 </select>
-                <button onClick={fetchServices} className="p-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-                    Search
-                </button>
             </div>
         </div>
 
         {isLoading ? (
-          <div>Loading services...</div>
+          <div className="text-center text-slate-400">Loading services...</div>
         ) : services.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {services.map(service => <ServiceCard key={service._id} service={service} />)}
           </div>
         ) : (
-          <p className="text-gray-500 bg-white p-6 rounded-lg">No services found matching your criteria.</p>
+          <div className="text-center py-20 px-6 bg-slate-800/50 rounded-lg border border-slate-700">
+            <h3 className="text-xl font-semibold text-white">No Services Found</h3>
+            <p className="text-slate-400 mt-2">Try adjusting your search filters to find what you're looking for.</p>
+          </div>
         )}
       </main>
       <Footer />

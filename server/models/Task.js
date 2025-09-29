@@ -46,6 +46,10 @@ const taskSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+    acceptedBidAmount:{
+      type: Number,
+      default: null
+    },
      reviews: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Review'

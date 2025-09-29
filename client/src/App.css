@@ -14,6 +14,10 @@ html, body {
 z-index: 10;
 }
 
+.card-glow-hover:hover {
+  border-color: rgba(250, 204, 21, 0.5); /* yellow-400 with 50% opacity */
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.2); /* A soft yellow glow */
+}
 
 /* === Add this to the bottom of src/App.css === */
 

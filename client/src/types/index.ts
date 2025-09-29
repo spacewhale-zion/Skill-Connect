@@ -118,6 +118,7 @@ export interface Task {
     amount: number;
     currency: string;
   };
+  acceptedBidAmount:number;
   reviews?: Review[];
   location: {
     type: 'Point';

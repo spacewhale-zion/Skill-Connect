@@ -1,45 +1,54 @@
 import type { Task } from '../../types/index';
 import { Link } from 'react-router-dom';
+import { FaMapMarkerAlt, FaClock, FaGavel } from 'react-icons/fa';
 
-const statusColors: { [key: string]: string } = {
-  Open: 'bg-blue-100 text-blue-800',
-  Assigned: 'bg-yellow-100 text-yellow-800',
-  Completed: 'bg-green-100 text-green-800',
+// Using the same themed status styles from the dashboard for consistency
+const statusStyles: { [key: string]: { text: string; bg: string; } } = {
+  Open: { text: 'text-sky-300', bg: 'bg-sky-500/20' },
+  Assigned: { text: 'text-yellow-300', bg: 'bg-yellow-500/20' },
+  'Pending Payment': { text: 'text-orange-400', bg: 'bg-orange-500/20' },
+  CompletedByProvider: { text: 'text-blue-400', bg: 'bg-blue-500/20' },
+  Completed: { text: 'text-green-400', bg: 'bg-green-500/20' },
+  Cancelled: { text: 'text-red-400', bg: 'bg-red-500/20' },
 };
 
 const TaskCard = ({ task }: { task: Task }) => {
-  // Calculate average rating if the task is completed and has reviews
-  const averageRating = task.status === 'Completed' && task.reviews && task.reviews.length > 0
-    ? task.reviews.reduce((acc, review) => acc + review.rating, 0) / task.reviews.length
-    : null;
+  const currentStatus = statusStyles[task.status] || { text: 'text-slate-300', bg: 'bg-slate-700' };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
-      <div className="flex justify-between items-start">
-        <h3 className="text-xl font-semibold text-gray-800">{task.title}</h3>
-        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColors[task.status]}`}>
-          {task.status}
-        </span>
-      </div>
-      <p className="text-sm text-gray-500 mt-2">{task.category}</p>
-      <p className="text-lg font-bold text-indigo-600 mt-4">₹{task.budget.amount}</p>
-      
-      {averageRating && (
-        <div className="mt-4">
-          <p className="text-sm text-gray-500">Completed with rating:</p>
-          <p className="text-lg font-bold text-yellow-500">⭐ {averageRating.toFixed(1)}</p>
+    <Link to={`/tasks/${task._id}`} className="block">
+      <div className="card-glow-hover bg-slate-800 border border-slate-700 p-6 rounded-lg shadow-lg transition-all duration-300 h-full">
+        {/* Header */}
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="text-xl font-bold text-white pr-4">{task.title}</h3>
+          <span className={`px-3 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${currentStatus.bg} ${currentStatus.text}`}>
+            {task.status}
+          </span>
         </div>
-      )}
+        
+        {/* Description */}
+        <p className="text-slate-300 text-sm mb-4">
+            {task.description.substring(0, 120)}{task.description.length > 120 ? '...' : ''}
+        </p>
 
-      <div className="mt-6">
-        <Link 
-          to={`/tasks/${task._id}`} 
-          className="text-indigo-600 hover:underline font-semibold"
-        >
-          View Details
-        </Link>
+        {/* Meta Info */}
+        <div className="flex flex-wrap items-center text-sm text-slate-400 mb-4">
+          <span className="text-lg font-bold text-yellow-400 mr-6">₹{task.budget.amount}</span>
+          <span className="flex items-center mr-6"><FaMapMarkerAlt className="mr-2" />{task.location.coordinates.join(', ')}</span>
+          <span className="flex items-center"><FaClock className="mr-2" />{new Date(task.createdAt).toLocaleDateString()}</span>
+        </div>
+
+        {/* Footer/Tags */}
+        <div className="pt-4 border-t border-slate-700 flex justify-between items-center">
+            <span className="px-3 py-1 text-xs font-semibold rounded-full bg-pink-500/20 text-pink-400">
+                {task.category}
+            </span>
+            <span className="text-sm font-semibold text-slate-300">
+                View Details →
+            </span>
+        </div>
       </div>
-    </div>
+    </Link>
   );
 };
 

@@ -1,29 +1,37 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/authContext';
-import Navbar from '../components/layout/Navbar'; // Reuse the Navbar
+import Navbar from '../components/layout/Navbar'; 
 import Footer from '../components/layout/Footer';
 import Dashboard from './Dashboard'
+
 const DashboardLayout = () => {
   const { user, isLoading } = useAuth();
 
-  // Show a loading indicator while checking auth status
   if (isLoading) {
-    return <div>Loading...</div>; // Or a spinner component
+    return <div className="bg-slate-900 min-h-screen text-white text-center py-10">Loading...</div>;
   }
 
-  // If not loading and no user, redirect to the login page
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  // If the user is logged in, render the dashboard layout
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      <Navbar />
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <Dashboard />
-      </main>
-      <Footer />
+    <div className="flex flex-col min-h-screen bg-slate-900 relative">
+      {/* --- Starfield Background --- */}
+      <div className="absolute inset-0 z-0">
+        <div id="stars"></div>
+        <div id="stars2"></div>
+        <div id="stars3"></div>
+      </div>
+      
+      {/* --- Page Content (must be relative and have a z-index) --- */}
+      <div className="relative z-10 flex flex-col flex-grow">
+        <Navbar />
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <Dashboard />
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 };

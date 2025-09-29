@@ -28,19 +28,21 @@ const PlaceBidForm = ({ taskId, onBidPlaced }: PlaceBidFormProps) => {
     }
   };
 
+  const inputStyles = "w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition";
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md mt-6">
-      <h3 className="text-xl font-bold text-gray-800 mb-4">Place Your Bid</h3>
+    <div className="bg-slate-800 border border-slate-700 p-6 rounded-lg mt-6">
+      <h3 className="text-xl font-bold text-white mb-4">Place Your Bid</h3>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Your Offer (₹)</label>
-          <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} required className="mt-1 w-full border-gray-300 rounded-md shadow-sm"/>
+          <label className="block text-sm font-medium te text-slate-300 mb-1">Your Offer (₹)</label>
+          <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} required className={inputStyles}/>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Message (Optional)</label>
-          <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} className="mt-1 w-full border-gray-300 rounded-md shadow-sm"></textarea>
+          <label className="block text-sm font-medium text-slate-300 mb-1">Message (Optional)</label>
+          <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} className={inputStyles}></textarea>
         </div>
-        <button type="submit" disabled={isSubmitting} className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-400">
+        <button type="submit" disabled={isSubmitting} className="w-full px-4 py-3 bg-yellow-400 text-slate-900 font-bold rounded-lg hover:bg-yellow-500 disabled:bg-yellow-400/50 transition">
           {isSubmitting ? 'Submitting...' : 'Submit Bid'}
         </button>
       </form>

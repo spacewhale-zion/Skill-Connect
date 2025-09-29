@@ -129,8 +129,12 @@ const assignTask = asyncHandler(async (req, res) => {
         throw new Error('Invalid bid details.');
     }
 
+
     task.assignedProvider = providerId;
     bid.status = 'Accepted';
+    task.acceptedBidAmount= bid.amount;
+    await task.save();
+
     await bid.save();
 
     if (paymentMethod === 'Cash') {
@@ -319,7 +323,7 @@ const getMyPostedTasks = asyncHandler(async (req, res) => {
 });
 
 const getMyAssignedTasks = asyncHandler(async (req, res) => {
-  const tasks = await Task.find({ assignedProvider: req.user._id })
+  const tasks = await Task.find({ assignedProvider: req.user._id ,status: 'Assigned'})
     .populate('reviews')
     .sort({ createdAt: -1 });
   res.status(200).json(tasks);
@@ -370,6 +374,16 @@ const cancelTask = asyncHandler(async (req, res) => {
   res.json(updatedTask);
 });
 
+const getAllMyTasks = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const tasks = await Task.find({
+    $or: [{ taskSeeker: userId }, { assignedProvider: userId }],
+  })
+    .populate('reviews')
+    .sort({ createdAt: -1 });
+  res.status(200).json(tasks);
+});
+
 export {
   createTask,
   getTasks,
@@ -380,5 +394,6 @@ export {
   getMyPostedTasks,
   getPaymentDetailsForTask,
   markCompletedByProvider,
-  cancelTask
+  cancelTask,
+  getAllMyTasks
 };

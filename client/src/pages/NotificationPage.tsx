@@ -1,4 +1,3 @@
-// spacewhale-zion/skill-connect/Skill-Connect-7116ae5702cce0b0c74858586a22e6d652228ad1/client/src/pages/NotificationPage.tsx
 import { useEffect, useState } from 'react';
 import { fetchNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../services/notificationServices';
 import { useNavigate } from 'react-router-dom';
@@ -7,11 +6,30 @@ import { useNotifications } from '../context/notificationContext';
 import type { Notification } from '../types';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
+import { FaBell, FaDollarSign, FaCommentDots, FaCheckCircle, FaBriefcase } from 'react-icons/fa';
 
 interface NotificationsPageProps {
   openChatWindow: (conversationId: string, recipientId: string, recipientName: string) => void;
   activeChatId?: string;
 }
+
+// Helper function to determine the icon and color based on notification title
+const getNotificationIcon = (title: string) => {
+    const lowerTitle = title.toLowerCase();
+    if (lowerTitle.includes('bid')) {
+        return { icon: <FaDollarSign />, color: 'bg-yellow-500/20 text-yellow-300' };
+    }
+    if (lowerTitle.includes('message')) {
+        return { icon: <FaCommentDots />, color: 'bg-sky-500/20 text-sky-300' };
+    }
+    if (lowerTitle.includes('complete') || lowerTitle.includes('confirmed') || lowerTitle.includes('released')) {
+        return { icon: <FaCheckCircle />, color: 'bg-green-500/20 text-green-400' };
+    }
+     if (lowerTitle.includes('assigned') || lowerTitle.includes('booked')) {
+        return { icon: <FaBriefcase />, color: 'bg-pink-500/20 text-pink-400' };
+    }
+    return { icon: <FaBell />, color: 'bg-slate-700 text-slate-300' };
+};
 
 const NotificationsPage = ({ openChatWindow, activeChatId }: NotificationsPageProps) => {
   const [loading, setLoading] = useState(true);
@@ -45,6 +63,7 @@ const NotificationsPage = ({ openChatWindow, activeChatId }: NotificationsPagePr
       }
     }
   
+    // This logic remains the same
     if (notification.title.startsWith("New message from") && notification.link) {
       const taskId = notification.link.split("/tasks/")[1];
       const recipientName = notification.title.replace("New message from ", "");
@@ -60,7 +79,7 @@ const NotificationsPage = ({ openChatWindow, activeChatId }: NotificationsPagePr
     try {
       await markAllNotificationsAsRead();
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      clearUnreadCount(); // Use the new function to clear the count
+      clearUnreadCount();
       toast.success("All notifications marked as read.");
     } catch (error) {
       toast.error("Failed to mark all notifications as read.");
@@ -70,47 +89,63 @@ const NotificationsPage = ({ openChatWindow, activeChatId }: NotificationsPagePr
   if (loading) return <div>Loading notifications...</div>;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-slate-900 text-white">
       <Navbar />
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800">Notifications</h1>
+      <main className="flex-grow container mx-auto px-4 py-12">
+        <div className="max-w-3xl mx-auto bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl shadow-2xl">
+          {/* Header */}
+          <div className="flex justify-between items-center p-6 border-b border-slate-700">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-white">Notifications</h1>
+              {unreadCount > 0 && (
+                <span className="bg-pink-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                  {unreadCount} NEW
+                </span>
+              )}
+            </div>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllRead}
-                className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
+                className="text-sm font-semibold text-yellow-400 hover:text-yellow-300 transition"
               >
                 Mark all as read
               </button>
             )}
           </div>
-          <div className="bg-white rounded-lg shadow-md">
+
+          {/* Notification List */}
+          <div>
             {notifications.length > 0 ? (
-              <ul className="divide-y divide-gray-200">
-                {notifications.map(notification => (
-                  <li
-                    key={notification._id}
-                    onClick={() => handleNotificationClick(notification)}
-                    className={`p-4 hover:bg-gray-50 cursor-pointer ${!notification.isRead ? 'bg-indigo-50' : ''}`}
-                  >
-                    <div className="flex items-start space-x-4">
-                      {!notification.isRead && (
-                        <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full mt-1.5 flex-shrink-0"></div>
-                      )}
-                      <div className={`flex-1 ${notification.isRead ? 'pl-7' : ''}`}>
-                        <p className="font-semibold text-gray-900">{notification.title}</p>
-                        <p className="text-gray-600">{notification.message}</p>
-                        <p className="text-xs text-gray-400 mt-1">
+              <ul className="divide-y divide-slate-700">
+                {notifications.map(notification => {
+                  const { icon, color } = getNotificationIcon(notification.title);
+                  return (
+                    <li
+                      key={notification._id}
+                      onClick={() => handleNotificationClick(notification)}
+                      className={`p-6 hover:bg-slate-700/50 cursor-pointer transition-colors duration-200 flex items-start gap-4 ${!notification.isRead ? 'bg-slate-800' : ''}`}
+                    >
+                      <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${color}`}>
+                        {icon}
+                      </div>
+                      <div className="flex-grow">
+                        <p className="font-semibold text-white">{notification.title}</p>
+                        <p className="text-slate-400 text-sm mt-1">{notification.message}</p>
+                      </div>
+                      <div className="flex-shrink-0 flex flex-col items-end">
+                        {!notification.isRead && (
+                            <div className="w-2.5 h-2.5 bg-yellow-400 rounded-full mb-2 animate-pulse"></div>
+                        )}
+                        <p className="text-xs text-slate-500 whitespace-nowrap">
                           {new Date(notification.createdAt).toLocaleString()}
                         </p>
                       </div>
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  )
+                })}
               </ul>
             ) : (
-              <p className="p-8 text-center text-gray-500">You have no notifications.</p>
+              <p className="p-12 text-center text-slate-500">You have no notifications yet.</p>
             )}
           </div>
         </div>

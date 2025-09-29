@@ -12,12 +12,13 @@ import NotificationsPage from './pages/NotificationPage';
 import ChatWindow from './components/chat/ChatWindow';
 import type { AuthUser } from './types';
 import useFcmToken from './hooks/useFCMtoken';
-import AllMyTasksPage from './pages/Allmytask';
+import AllMyPostedTasksPage from './pages/AllmytPostedtask';
 import AllMyAssignedTasksPage from './pages/AllmyAssignedtask';
 import FindServicesPage from './pages/FindServicePage';
 import ServiceDetailsPage from './pages/ServiceDetailsPage';
 import AllMyServicesPage from './pages/AllmyServicePage';
 import AllMyBookedServicesPage from './pages/AllBookedServices';
+import AllMyTasksPage from './pages/Allmytaskpage';
 
 
 function App() {
@@ -65,10 +66,13 @@ function App() {
           element={<NotificationsPage openChatWindow={openChatWindow}
            activeChatId={chatWindowData?.conversationId} />} // pass the prop here
         />
-        <Route path="/my-posted-tasks" element={<AllMyTasksPage />} />
+        <Route path="/my-posted-tasks" element={<AllMyPostedTasksPage />} />
         <Route path="/my-assigned-tasks" element={<AllMyAssignedTasksPage />} />
         <Route path="/my-offered-services" element={<AllMyServicesPage />}/>
   <Route path="/my-booked-services" element={<AllMyBookedServicesPage />} />
+  <Route path="/my-all-tasks" element={<AllMyTasksPage />} />
+
+
       </Routes>
     </>
   );
