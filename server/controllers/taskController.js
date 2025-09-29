@@ -36,6 +36,7 @@ const createTask = asyncHandler(async (req, res) => {
   res.status(201).json(task);
 });
 
+
 /**
  * @desc    Get tasks, with optional geo-filtering
  * @route   GET /api/tasks
@@ -78,6 +79,7 @@ const getTasks = asyncHandler(async (req, res) => {
 
   res.status(200).json(tasks);
 });
+
 
 /**
  * @desc    Get a single task by its ID
@@ -375,12 +377,16 @@ const cancelTask = asyncHandler(async (req, res) => {
 });
 
 const getAllMyTasks = asyncHandler(async (req, res) => {
+
+  console.log("entered here");
   const userId = req.user._id;
   const tasks = await Task.find({
     $or: [{ taskSeeker: userId }, { assignedProvider: userId }],
   })
     .populate('reviews')
     .sort({ createdAt: -1 });
+
+  console.log(tasks);
   res.status(200).json(tasks);
 });
 

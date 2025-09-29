@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/authContext';
-import { getMyPostedTasks, getMyAssignedTasks } from '../services/taskServices';
+import { getMyPostedTasks, getMyAssignedTasks, getAllMyTasks } from '../services/taskServices';
 import { getMyOfferedServices } from '../services/serviceServices';
 import TaskCard from '../components/tasks/TaskCard';
 import ServiceCard from '../components/services/ServiceCardDashBoard';
@@ -12,10 +12,12 @@ import toast from 'react-hot-toast';
 import type { Task, Service } from '../types/index';
 import { FaPlus, FaTasks, FaCheckDouble, FaBolt, FaConciergeBell } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
+import { get } from 'http';
 
 const DashboardPage = () => {
   const { user } = useAuth();
   const [postedTasks, setPostedTasks] = useState<Task[]>([]);
+  const [Alltasks, setAllTasks] = useState<Task[]>([]);
   const [assignedTasks, setAssignedTasks] = useState<Task[]>([]);
   const [offeredServices, setOfferedServices] = useState<Service[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,14 +28,16 @@ const DashboardPage = () => {
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [posted, assigned, services] = await Promise.all([
+      const [posted, assigned, services,allTasks] = await Promise.all([
         getMyPostedTasks(),
         getMyAssignedTasks(),
         getMyOfferedServices(),
+        getAllMyTasks()
       ]);
       setPostedTasks(posted);
       setAssignedTasks(assigned);
       setOfferedServices(services);
+      setAllTasks(allTasks); 
     } catch (error) {
       toast.error('Failed to load dashboard data.');
     } finally {
@@ -47,15 +51,15 @@ const DashboardPage = () => {
 
   // Calculations for dashboard data
   const totalEarned = useMemo(() => {
-    return assignedTasks
-      .filter(task => task.status === 'Completed')
-      .reduce((sum, task) => sum + task.budget.amount, 0);
+    return Alltasks
+      .filter(task => (task.status === 'Completed' && task.assignedProvider===user?._id))
+      .reduce((sum, task) => sum + task.acceptedBidAmount, 0);
   }, [assignedTasks]);
 
   const totalSpent = useMemo(() => {
     return postedTasks
-      .filter(task => task.status === 'Completed')
-      .reduce((sum, task) => sum + task.budget.amount, 0);
+      .filter(task => (task.status === 'Completed' && task.taskSeeker._id ===user?._id))
+      .reduce((sum, task) => sum + task.acceptedBidAmount, 0);
   }, [postedTasks]);
 
   const bookedServices = useMemo(() => postedTasks.filter(task => task.isInstantBooking), [postedTasks]);
