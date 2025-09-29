@@ -173,6 +173,9 @@ const { paymentMethod } = req.body;
       originatingService: service._id,
     });
   }
+
+ 
+
   // --- NOTIFICATION LOGIC ---
   const notificationTitle = 'Your service has been booked!';
   const notificationBody = `${taskSeeker.name} has booked your service: "${service.title}"`;

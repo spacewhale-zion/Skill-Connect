@@ -75,9 +75,16 @@ const DashboardPage = () => {
 
        {bookedServices.length > 0 && (
           <section className="mb-12">
-              <h2 className="text-2xl font-semibold text-gray-700 mb-4">My Booked Services</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-semibold text-gray-700">My Booked Services</h2>
+                {bookedServices.length > 2 && (
+                    <Link to="/my-booked-services" className="text-indigo-600 hover:underline font-semibold">
+                    View More
+                    </Link>
+                )}
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {bookedServices.map(task => <TaskCard key={task._id} task={task} />)}
+                  {bookedServices.slice(0, 3).map(task => <TaskCard key={task._id} task={task} />)}
               </div>
           </section>
       )}

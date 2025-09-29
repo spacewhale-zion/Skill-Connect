@@ -15,7 +15,7 @@ const RegisterPage = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
   const { token } = useFcmToken();
-  console.log(token)
+  // console.log(token)
 
   const handleGetLocation = () => {
     if (navigator.geolocation) {

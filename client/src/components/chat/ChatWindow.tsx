@@ -1,10 +1,11 @@
-// spacewhale-zion/skill-connect/Skill-Connect-7116ae5702cce0b0c74858586a22e6d652228ad1/client/src/components/chat/ChatWindow.tsx
+// spacewhale-zion/skill-connect/Skill-Connect-e87cf6223cbd3887670780f5036f493f8ada8812/client/src/components/chat/ChatWindow.tsx
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/authContext";
 import { useNotifications } from "../../context/notificationContext";
 import { fetchChatHistory, Message, markMessageAsRead } from "../../services/chatService";
 import toast from "react-hot-toast";
 import type { AuthUser } from "../../types";
+import { Send, ChevronDown, X } from 'lucide-react';
 
 interface ChatWindowProps {
   taskId: string;
@@ -14,14 +15,13 @@ interface ChatWindowProps {
 
 const ChatWindow = ({ taskId, recipient, onClose }: ChatWindowProps) => {
   const { user } = useAuth();
-  const { socket, incrementUnreadCount, setNotifications, decrementUnreadCount } = useNotifications(); // Use the shared socket
+  const { socket, incrementUnreadCount, setNotifications, decrementUnreadCount } = useNotifications();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initialize socket & load messages
   useEffect(() => {
     if (!user || !socket) return;
 
@@ -29,13 +29,9 @@ const ChatWindow = ({ taskId, recipient, onClose }: ChatWindowProps) => {
       .then((data) => {
         setMessages(data.messages);
         setConversationId(data.conversationId);
-
-        // Join room
         socket.emit("join_chat_room", taskId);
-
-        // Mark messages as read
         data.messages
-          .filter((msg) => msg.sender._id !== user._id)
+          .filter((msg) => msg.sender._id !== user._id && !msg.isRead)
           .forEach((msg) => {
             markMessageAsRead(msg._id).catch(console.error);
             decrementUnreadCount();
@@ -44,13 +40,11 @@ const ChatWindow = ({ taskId, recipient, onClose }: ChatWindowProps) => {
       .catch(() => toast.error("Could not load chat history."));
 
     const handleMessageReceived = (message: Message) => {
-      // Only add the message if it belongs to the current conversation
       if (message.conversation === conversationId) {
         setMessages((prev) => [...prev, message]);
         if (!isMinimized) {
           markMessageAsRead(message._id).catch(console.error);
         } else {
-          // This logic for minimized chat remains the same
           const notification = {
             _id: message._id,
             title: "New Chat Message",
@@ -74,7 +68,6 @@ const ChatWindow = ({ taskId, recipient, onClose }: ChatWindowProps) => {
     };
   }, [taskId, user, socket, conversationId, isMinimized, decrementUnreadCount, incrementUnreadCount, setNotifications]);
 
-  // Scroll to bottom
   useEffect(() => {
     if (!isMinimized) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isMinimized]);
@@ -95,37 +88,44 @@ const ChatWindow = ({ taskId, recipient, onClose }: ChatWindowProps) => {
   return (
     <div className={`fixed bottom-4 right-4 w-96 bg-white rounded-lg shadow-2xl flex flex-col z-50 transition-all duration-300 ${isMinimized ? "h-14" : "h-[500px]"}`}>
       <header
-        className="bg-indigo-600 text-white p-4 rounded-t-lg flex justify-between items-center cursor-pointer"
+        className="bg-gray-100 text-gray-800 p-3 rounded-t-lg flex justify-between items-center cursor-pointer border-b"
         onClick={() => setIsMinimized(!isMinimized)}
       >
-        <h3 className="font-bold">{recipient.name}</h3>
-        <div className="flex items-center space-x-3">
-          <button onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }}>{isMinimized ? '▲' : '▼'}</button>
-          <button onClick={(e) => { e.stopPropagation(); onClose(); }}>✖</button>
+        <div className="flex items-center gap-2">
+            <img src={recipient.profilePicture || `https://ui-avatars.com/api/?name=${recipient.name}&background=random`} alt={recipient.name} className="w-8 h-8 rounded-full" />
+            <h3 className="font-bold text-sm">{recipient.name}</h3>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }} className="text-gray-500 hover:text-gray-800">
+            <ChevronDown className={`w-5 h-5 transition-transform ${!isMinimized && "rotate-180"}`} />
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-gray-500 hover:text-gray-800">
+            <X className="w-5 h-5" />
+          </button>
         </div>
       </header>
       {!isMinimized && (
         <>
           <div className="flex-grow p-4 overflow-y-auto bg-gray-50">
             {messages.map((msg) => (
-              <div key={msg._id} className={`flex mb-4 ${msg.sender._id === user?._id ? "justify-end" : "justify-start"}`}>
-                <div className={`p-3 rounded-lg max-w-xs ${msg.sender._id === user?._id ? "bg-indigo-500 text-white" : "bg-gray-200 text-gray-800"}`}>
+              <div key={msg._id} className={`flex mb-3 ${msg.sender._id === user?._id ? "justify-end" : "justify-start"}`}>
+                 <div className={`p-2 px-3 rounded-lg max-w-xs text-base ${msg.sender._id === user?._id ? "bg-blue-500 text-white" : "bg-gray-200"}`}>
                   {msg.text}
                 </div>
               </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
-          <form onSubmit={handleSendMessage} className="p-4 border-t flex">
+          <form onSubmit={handleSendMessage} className="p-3 border-t flex items-center gap-2">
             <input
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type a message..."
-              className="flex-grow p-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="flex-grow p-2 bg-transparent border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
-            <button type="submit" className="bg-indigo-600 text-white px-4 rounded-r-md hover:bg-indigo-700">
-              Send
+            <button type="submit" className="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 disabled:opacity-50" disabled={!newMessage.trim()}>
+              <Send className="w-5 h-5"/>
             </button>
           </form>
         </>

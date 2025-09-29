@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "@types/three": "^0.180.0"
+  },
+  "dependencies": {
+    "@splinetool/react-spline": "^4.1.0"
+  }
+}

@@ -24,7 +24,7 @@ const useFcmToken = () => {
           if (!res.ok) throw new Error("Failed to save FCM token");
           return res.json();
         })
-        .then((data) => console.log("FCM token saved:", data))
+        .then((data) => console.log("FCM token saved:",data))
         .catch((err) => console.error(err));
     }
   }, [token, user?.token]);
@@ -44,7 +44,7 @@ const useFcmToken = () => {
         const registration = await navigator.serviceWorker.register(
           "/firebase-messaging-sw.js"
         );
-
+        // console.log(VAPID_KEY);
         const fcmToken = await getToken(messaging, {
           vapidKey: VAPID_KEY,
           serviceWorkerRegistration: registration,
@@ -52,7 +52,7 @@ const useFcmToken = () => {
 
         if (fcmToken) {
           setToken(fcmToken);
-          console.log("FCM Token:", fcmToken);
+          // console.log("FCM Token:", fcmToken);
         }
       } catch (err) {
         console.error("Error retrieving FCM token:", err);

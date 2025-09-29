@@ -37,7 +37,7 @@ export const getTaskById = async (taskId: string): Promise<Task> => {
 export const getTasks = async (params: TaskSearchParams): Promise<Task[]> => {
   const filteredParams = Object.fromEntries(Object.entries(params).filter(([_, v]) => v != null && v !== ''));
   const { data } = await api.get('/tasks', { params: filteredParams });
-  console.log(data);
+  // console.log(data);
   return data;
 };
 

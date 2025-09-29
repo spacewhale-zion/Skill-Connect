@@ -32,6 +32,7 @@ const createTask = asyncHandler(async (req, res) => {
     taskSeeker: req.user._id,
   });
 
+ 
   res.status(201).json(task);
 });
 
@@ -84,7 +85,7 @@ const getTasks = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const getTaskById = asyncHandler(async (req, res) => {
-  const task = await Task.findById(req.params.id)
+   const task = await Task.findById(req.params.id)
     .populate('taskSeeker', 'name profilePicture averageRating')
     .populate('assignedProvider', 'name profilePicture averageRating')
     .populate({
@@ -194,9 +195,11 @@ const markCompletedByProvider = asyncHandler(async (req, res) => {
     }
 
     task.status = 'CompletedByProvider';
+    
+    await task.populate('taskSeeker', 'name profilePicture');
     const updatedTask = await task.save();
-
-    const notificationTitle = 'Provider has completed the task!';
+   
+    const notificationTitle = `${updatedTask.taskSeeker.name} has completed the task!`;
     const notificationBody = `The provider for "${task.title}" has marked the task as complete. Please confirm to release payment.`;
     const notification = await Notification.create({
         user: task.taskSeeker,
@@ -310,6 +313,7 @@ const completeTask = asyncHandler(async (req, res) => {
 const getMyPostedTasks = asyncHandler(async (req, res) => {
   const tasks = await Task.find({ taskSeeker: req.user._id })
     .populate('reviews')
+    .populate('taskSeeker', 'name profilePicture')
     .sort({ createdAt: -1 });
   res.status(200).json(tasks);
 });

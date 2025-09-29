@@ -1,6 +1,6 @@
 import { Routes, Route, } from 'react-router-dom';
 import {useState} from 'react';
-import LoginPage from './pages/LoginPage';
+import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
 import DashboardLayout from './pages/DashboardLayout';
@@ -17,6 +17,8 @@ import AllMyAssignedTasksPage from './pages/AllmyAssignedtask';
 import FindServicesPage from './pages/FindServicePage';
 import ServiceDetailsPage from './pages/ServiceDetailsPage';
 import AllMyServicesPage from './pages/AllmyServicePage';
+import AllMyBookedServicesPage from './pages/AllBookedServices';
+
 
 function App() {
 
@@ -66,7 +68,7 @@ function App() {
         <Route path="/my-posted-tasks" element={<AllMyTasksPage />} />
         <Route path="/my-assigned-tasks" element={<AllMyAssignedTasksPage />} />
         <Route path="/my-offered-services" element={<AllMyServicesPage />}/>
-
+  <Route path="/my-booked-services" element={<AllMyBookedServicesPage />} />
       </Routes>
     </>
   );

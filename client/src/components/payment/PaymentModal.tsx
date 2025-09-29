@@ -24,7 +24,7 @@ const CheckoutForm = ({ onSuccessfulPayment, clientSecret }: CheckoutFormProps) 
     // Immediately retrieve the PaymentIntent to check its status upon loading
     stripe.retrievePaymentIntent(clientSecret).then(({ paymentIntent }) => {
       
-        console.log(paymentIntent?.status );
+        // console.log(paymentIntent?.status );
       switch (paymentIntent?.status) {
 
         case "succeeded":

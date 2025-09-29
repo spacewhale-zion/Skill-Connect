@@ -54,7 +54,7 @@ const PostTaskModal = ({ isOpen, onClose, onTaskCreated }: PostTaskModalProps) =
     setIsSubmitting(true);
     try {
       await createTask(taskData);
-      console.log(import.meta.env.VITE_API_BASE_URL)
+      // console.log(import.meta.env.VITE_API_BASE_URL)
       toast.success('Task posted successfully!');
       onTaskCreated(); // Trigger the refresh in the parent component
       onClose();       // Close the modal
