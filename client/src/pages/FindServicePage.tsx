@@ -89,7 +89,11 @@ const FindServicesPage = () => {
           <div className="text-center text-slate-400">Loading services...</div>
         ) : services.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map(service => <ServiceCard key={service._id} service={service} />)}
+           {services
+  .filter(service => service.provider._id !== user?._id)
+  .map(service => (
+    <ServiceCard key={service._id} service={service} />
+))}
           </div>
         ) : (
           <div className="text-center py-20 px-6 bg-slate-800/50 rounded-lg border border-slate-700">

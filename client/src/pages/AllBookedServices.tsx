@@ -31,27 +31,33 @@ const AllMyBookedServicesPage = () => {
 
   if (isLoading) {
     return (
-        <>
+        <div className="flex flex-col min-h-screen bg-slate-900 text-white">
+         
             <div className="container mx-auto px-4 py-8">
-                <h1 className="text-3xl font-bold text-gray-800 mb-6">My Booked Services</h1>
-                <div>Loading...</div>
+                <h1 className="text-3xl font-bold text-white mb-6">My Booked Services</h1>
+                <div>Loading services...</div>
             </div>
-        </>
+         
+        </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col bg-slate-900  min-h-screen  text-white">
       <main className="flex-grow container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">My Booked Services</h1>
+        <h1 className="text-4xl font-extrabold text-center mb-10">My Booked Services</h1>
         {bookedServices.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {bookedServices.map(task => <TaskCard key={task._id} task={task} />)}
           </div>
         ) : (
-          <p className="text-gray-500 bg-white p-6 rounded-lg">You haven't booked any services yet.</p>
+          <div className="text-center py-20 px-6 bg-slate-800/50 rounded-lg border border-slate-700">
+            <h3 className="text-xl font-semibold text-white">No Booked Services</h3>
+            <p className="text-slate-400 mt-2">You haven't booked any instant-book services yet.</p>
+          </div>
         )}
       </main>
+      <Footer />
     </div>
   );
 };

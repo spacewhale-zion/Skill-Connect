@@ -16,7 +16,7 @@ const Star = ({ filled, onClick, onMouseEnter, onMouseLeave }: { filled: boolean
     onClick={onClick}
     onMouseEnter={onMouseEnter}
     onMouseLeave={onMouseLeave}
-    className={`w-8 h-8 cursor-pointer ${filled ? 'text-yellow-400' : 'text-gray-300'}`}
+    className={`w-10 h-10 cursor-pointer transition-colors ${filled ? 'text-yellow-400' : 'text-slate-600 hover:text-slate-500'}`}
     fill="currentColor"
     viewBox="0 0 20 20"
     xmlns="http://www.w3.org/2000/svg"
@@ -51,20 +51,21 @@ const SubmitReviewModal = ({ isOpen, onClose, onReviewSubmitted, taskId, reviewe
       setIsSubmitting(false);
     }
   };
+  
+  const inputStyles = "w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition";
 
   return (
-<div className="fixed inset-0 bg-transparent z-50 flex justify-center items-center">
-
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+      <div className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-8 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-800">Rate Your Experience</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-3xl font-light">&times;</button>
+          <h2 className="text-2xl font-bold text-white">Rate Your Experience</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-white text-3xl font-light">&times;</button>
         </div>
-        <p className="text-gray-600 mb-6">How was your experience with <span className="font-semibold">{revieweeName}</span>?</p>
+        <p className="text-slate-400 mb-6">How was your experience with <span className="font-semibold text-yellow-400">{revieweeName}</span>?</p>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Your Rating</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Your Rating</label>
             <div className="flex" onMouseLeave={() => setHoverRating(0)}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
@@ -78,23 +79,23 @@ const SubmitReviewModal = ({ isOpen, onClose, onReviewSubmitted, taskId, reviewe
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Add a Comment (Optional)</label>
+            <label className="block text-sm font-medium text-slate-300">Add a Comment (Optional)</label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={4}
               placeholder={`Share your experience...`}
-              className="mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+              className={`mt-1 ${inputStyles}`}
             ></textarea>
           </div>
           <div className="flex justify-end space-x-4 pt-4">
-            <button type="button" onClick={onClose} className="px-5 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md hover:bg-gray-300 transition duration-200">
+            <button type="button" onClick={onClose} className="px-5 py-2 text-slate-400 font-semibold rounded-md hover:underline transition duration-200">
               Skip
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 disabled:bg-indigo-400 transition duration-200"
+              className="px-5 py-2 bg-yellow-400 text-slate-900 font-bold rounded-md hover:bg-yellow-500 disabled:opacity-50 transition duration-200"
             >
               {isSubmitting ? 'Submitting...' : 'Submit Review'}
             </button>

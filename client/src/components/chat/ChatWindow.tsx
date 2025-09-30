@@ -1,4 +1,3 @@
-// spacewhale-zion/skill-connect/Skill-Connect-e87cf6223cbd3887670780f5036f493f8ada8812/client/src/components/chat/ChatWindow.tsx
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/authContext";
 import { useNotifications } from "../../context/notificationContext";
@@ -86,45 +85,45 @@ const ChatWindow = ({ taskId, recipient, onClose }: ChatWindowProps) => {
   };
 
   return (
-    <div className={`fixed bottom-4 right-4 w-96 bg-white rounded-lg shadow-2xl flex flex-col z-50 transition-all duration-300 ${isMinimized ? "h-14" : "h-[500px]"}`}>
+    <div className={`fixed bottom-4 right-4 w-96 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl flex flex-col z-50 transition-all duration-300 ${isMinimized ? "h-14" : "h-[500px]"}`}>
       <header
-        className="bg-gray-100 text-gray-800 p-3 rounded-t-lg flex justify-between items-center cursor-pointer border-b"
+        className="bg-slate-900 text-white p-3 rounded-t-lg flex justify-between items-center cursor-pointer border-b border-slate-700"
         onClick={() => setIsMinimized(!isMinimized)}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
             <img src={recipient.profilePicture || `https://ui-avatars.com/api/?name=${recipient.name}&background=random`} alt={recipient.name} className="w-8 h-8 rounded-full" />
             <h3 className="font-bold text-sm">{recipient.name}</h3>
         </div>
         <div className="flex items-center space-x-2">
-          <button onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }} className="text-gray-500 hover:text-gray-800">
+          <button onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }} className="text-slate-400 hover:text-white">
             <ChevronDown className={`w-5 h-5 transition-transform ${!isMinimized && "rotate-180"}`} />
           </button>
-          <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-gray-500 hover:text-gray-800">
+          <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
       </header>
       {!isMinimized && (
         <>
-          <div className="flex-grow p-4 overflow-y-auto bg-gray-50">
+          <div className="flex-grow p-4 overflow-y-auto bg-slate-900">
             {messages.map((msg) => (
               <div key={msg._id} className={`flex mb-3 ${msg.sender._id === user?._id ? "justify-end" : "justify-start"}`}>
-                 <div className={`p-2 px-3 rounded-lg max-w-xs text-base ${msg.sender._id === user?._id ? "bg-blue-500 text-white" : "bg-gray-200"}`}>
+                  <div className={`p-2 px-3 rounded-lg max-w-xs text-base ${msg.sender._id === user?._id ? "bg-yellow-400 text-slate-900" : "bg-slate-700 text-white"}`}>
                   {msg.text}
                 </div>
               </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
-          <form onSubmit={handleSendMessage} className="p-3 border-t flex items-center gap-2">
+          <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-700 flex items-center gap-2">
             <input
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type a message..."
-              className="flex-grow p-2 bg-transparent border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="flex-grow p-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-yellow-400"
             />
-            <button type="submit" className="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 disabled:opacity-50" disabled={!newMessage.trim()}>
+            <button type="submit" className="bg-yellow-400 text-slate-900 p-2 rounded-md hover:bg-yellow-500 disabled:opacity-50" disabled={!newMessage.trim()}>
               <Send className="w-5 h-5"/>
             </button>
           </form>

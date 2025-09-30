@@ -47,15 +47,9 @@ const getTasks = asyncHandler(async (req, res) => {
   let tasksQuery = { status: 'Open' };
 
   if (keyword) {
-    const textResults = await Task.find(
-      { $text: { $search: keyword }, status: 'Open' },
-      { _id: 1 }
-    );
-    const textMatchedIds = textResults.map((doc) => doc._id);
-    if (textMatchedIds.length === 0) {
-      return res.status(200).json([]);
-    }
-    tasksQuery._id = { $in: textMatchedIds };
+    // Match tasks where title starts with the keyword (case-insensitive)
+    const regex = new RegExp('^' + keyword, 'i'); 
+    tasksQuery.title = regex;
   }
 
   if (category) tasksQuery.category = category;
@@ -287,7 +281,7 @@ const completeTask = asyncHandler(async (req, res) => {
         const service = await Service.findById(task.originatingService);
         if (service) {
             service.isActive = true;
-            console.log(service.isActive);
+            
             await service.save();
         }
     }
@@ -378,7 +372,7 @@ const cancelTask = asyncHandler(async (req, res) => {
 
 const getAllMyTasks = asyncHandler(async (req, res) => {
 
-  console.log("entered here");
+ 
   const userId = req.user._id;
   const tasks = await Task.find({
     $or: [{ taskSeeker: userId }, { assignedProvider: userId }],
@@ -386,7 +380,7 @@ const getAllMyTasks = asyncHandler(async (req, res) => {
     .populate('reviews')
     .sort({ createdAt: -1 });
 
-  console.log(tasks);
+
   res.status(200).json(tasks);
 });
 

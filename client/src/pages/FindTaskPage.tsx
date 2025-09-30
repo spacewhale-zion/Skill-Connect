@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/authContext'; // Import useAuth
 import { getTasks } from '../services/taskServices';
 import toast from 'react-hot-toast';
 import Navbar from '../components/layout/Navbar';
@@ -8,10 +9,12 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import type { Task, TaskSearchParams } from '../types/index';
 
 const FindTasksPage = () => {
+  const { user } = useAuth(); // Get user from context
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<TaskSearchParams>({
-    lat: 20.5937, // Default center of India
+    // Initial fallback coordinates
+    lat: 20.5937, 
     lng: 78.9629,
     radius: 50,
     keyword: '',
@@ -32,18 +35,44 @@ const FindTasksPage = () => {
     }
   }, [filters]);
 
+  // --- IMPROVED LOCATION LOGIC ---
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const userCoords: [number, number] = [position.coords.latitude, position.coords.longitude];
-        setFilters(prev => ({ ...prev, lat: userCoords[0], lng: userCoords[1], radius: 10 }));
-        setMapCenter(userCoords);
-      },
-      () => searchTasks()
-    );
-  }, []);
+    // 1. Try to get live geolocation first
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // SUCCESS: Use live location
+          const userCoords: [number, number] = [position.coords.latitude, position.coords.longitude];
+          setFilters(prev => ({ ...prev, lat: userCoords[0], lng: userCoords[1], radius: 10 }));
+          setMapCenter(userCoords);
+        },
+        () => {
+          // FAIL: Geolocation denied or failed, try using profile location
+          if (user?.location?.coordinates) {
+            const profileCoords: [number, number] = [user.location.coordinates[1], user.location.coordinates[0]];
+            setFilters(prev => ({ ...prev, lat: profileCoords[0], lng: profileCoords[1], radius: 10 }));
+            setMapCenter(profileCoords);
+            toast.error("Could not get live location. Using your profile location.");
+          } else {
+            // No live or profile location, search with default
+            searchTasks();
+          }
+        }
+      );
+    } else {
+      // Browser doesn't support geolocation, fall back to profile location
+       if (user?.location?.coordinates) {
+            const profileCoords: [number, number] = [user.location.coordinates[1], user.location.coordinates[0]];
+            setFilters(prev => ({ ...prev, lat: profileCoords[0], lng: profileCoords[1], radius: 10 }));
+            setMapCenter(profileCoords);
+        } else {
+            searchTasks();
+        }
+    }
+  }, [user]); // Rerun if user logs in/out
 
   useEffect(() => {
+    // This effect now runs automatically after the location is determined
     searchTasks();
   }, [searchTasks]);
 
@@ -91,7 +120,7 @@ const FindTasksPage = () => {
               </select>
               <div className="md:col-span-2">
                   <label className="text-sm text-slate-300">Search Radius: {filters.radius} km</label>
-                  <input type="range" name="radius" min="1" max="500000" value={filters.radius} onChange={handleFilterChange} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-yellow-400" />
+                  <input type="range" name="radius" min="1" max="50" value={filters.radius} onChange={handleFilterChange} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-yellow-400" />
               </div>
             </div>
           </div>

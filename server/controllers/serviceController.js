@@ -41,74 +41,76 @@ const createService = asyncHandler(async (req, res) => {
  */
 const getServices = asyncHandler(async (req, res) => {
   const { lat, lng, category, keyword, maxPrice } = req.query;
-
+  const userId = req.user?._id; // Assuming auth middleware sets req.user
+  
   let query = { isActive: true };
 
-  // --- THIS IS THE FIX ---
-  // Step 1: Handle keyword search separately to get matching IDs first
-  if (keyword) {
-    const matchingServices = await Service.find({ $text: { $search: keyword } }, '_id');
-    const matchingIds = matchingServices.map(service => service._id);
-    
-    // If no text matches, return an empty array immediately
-    if (matchingIds.length === 0) {
-      return res.status(200).json([]);
-    }
-    
-    query._id = { $in: matchingIds };
+  // --- Exclude services posted by the current user ---
+  if (userId) {
+    query.provider = { $ne: userId };
   }
 
-  // Step 2: Build the rest of the query
+  // --- KEYWORD SEARCH: prefix or partial match ---
+  if (keyword) {
+    const regex = new RegExp('^' + keyword, 'i'); // starts with keyword, case-insensitive
+    query.title = regex;
+  }
+
+  // --- CATEGORY FILTER ---
   if (category) {
     query.category = category;
   }
+
+  // --- PRICE FILTER: only show services <= maxPrice ---
   if (maxPrice) {
-    query.price = { $gte: parseInt(maxPrice) };
+    query.price = { $lte: parseInt(maxPrice) };
   }
 
   let services;
 
   if (lat && lng) {
-    // Step 3: Perform geospatial search using the pre-filtered query
+    // Geospatial search
     services = await Service.aggregate([
       {
         $geoNear: {
           near: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
           distanceField: 'distance',
           spherical: true,
-          query: query, // Use the query, which may include the IDs from the text search
+          query: query, // pre-filtered with keyword, category, maxPrice, excluding own services
         },
       },
       {
         $lookup: {
-            from: 'users',
-            localField: 'provider',
-            foreignField: '_id',
-            as: 'providerDetails'
+          from: 'users',
+          localField: 'provider',
+          foreignField: '_id',
+          as: 'providerDetails'
         }
       },
       { $unwind: '$providerDetails' },
       {
         $project: {
-            title: 1,
-            description: 1,
-            category: 1,
-            price: 1,
-            createdAt: 1,
-            'provider.name': '$providerDetails.name',
-            'provider.averageRating': '$providerDetails.averageRating',
-            'provider._id': '$providerDetails._id',
-            'distance': { $round: [{ $divide: ['$distance', 1000] }, 1] }
+          title: 1,
+          description: 1,
+          category: 1,
+          price: 1,
+          createdAt: 1,
+          'provider.name': '$providerDetails.name',
+          'provider.averageRating': '$providerDetails.averageRating',
+          'provider._id': '$providerDetails._id',
+          'distance': { $round: [{ $divide: ['$distance', 1000] }, 1] }
         }
       }
     ]);
   } else {
-    // If no location, perform a regular find
+    // Regular find without geospatial filtering
     services = await Service.find(query).populate('provider', 'name averageRating');
   }
-  
+
   res.status(200).json(services);
 });
+
+
 
 
 /**

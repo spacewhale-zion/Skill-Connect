@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
 import { useEffect, useRef } from "react";
 import * as THREE from "three"; // ✅ Import Three.js properly
+import { useAuth } from '../../context/authContext'; 
 
 const Hero = () => {
+    const { user } = useAuth();
+   const getStartedLink = user ? '/tasks' : '/login';
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -79,7 +82,7 @@ const Hero = () => {
         </p>
         <div className="mt-8">
           <Link
-            to="/register"
+            to={getStartedLink}
             className="bg-yellow-400 text-indigo-900 font-bold py-3 px-8 rounded-full hover:bg-yellow-300 transition duration-300 ease-in-out transform hover:scale-105"
           >
             Get Started
