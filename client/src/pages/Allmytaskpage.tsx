@@ -48,19 +48,16 @@ const AllMyTasksPage = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-slate-900 text-white">
-        <Navbar />
         <div className="container mx-auto px-4 py-8">
           <h1 className="text-3xl font-bold text-white mb-6">All My Tasks</h1>
           <div>Loading tasks...</div>
         </div>
-        <Footer />
       </div>
     );
   }
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-900 text-white">
-      <Navbar />
       <main className="flex-grow container mx-auto px-4 py-8">
         <h1 className="text-4xl font-extrabold text-center mb-10">All My Tasks</h1>
         {sortedTasks.length > 0 ? (
@@ -74,7 +71,6 @@ const AllMyTasksPage = () => {
           </div>
         )}
       </main>
-      <Footer />
     </div>
   );
 };

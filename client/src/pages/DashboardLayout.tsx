@@ -26,11 +26,9 @@ const DashboardLayout = () => {
       
       {/* --- Page Content (must be relative and have a z-index) --- */}
       <div className="relative z-10 flex flex-col flex-grow">
-        <Navbar />
         <main className="flex-grow container mx-auto px-4 py-8">
           <Dashboard />
         </main>
-        <Footer />
       </div>
     </div>
   );

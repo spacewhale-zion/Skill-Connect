@@ -8,7 +8,7 @@ import Showcase from '../components/home/Showcase';
 const HomePage = () => {
   return (
     <div>
-      <Navbar />
+ 
         <canvas id="bg" className="absolute top-0 left-0 w-full h-full"></canvas>
       <main>
         <Hero />
@@ -16,7 +16,6 @@ const HomePage = () => {
         <Features />
         <Testimonials />
       </main>
-      <Footer />
     </div>
   );
 };

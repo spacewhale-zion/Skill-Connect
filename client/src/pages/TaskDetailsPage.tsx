@@ -167,7 +167,6 @@ const TaskDetailsPage = () => {
 
     return (
         <div className="bg-slate-900 min-h-screen text-white">
-            <Navbar />
             <div className="container mx-auto px-4 py-12">
                 <div className="bg-slate-800 border border-slate-700 p-8 rounded-xl shadow-lg">
                     <div className="border-b border-slate-700 pb-6 mb-8">
@@ -269,7 +268,6 @@ const TaskDetailsPage = () => {
             {isReviewModalOpen && reviewee && (<SubmitReviewModal isOpen={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)} onReviewSubmitted={handleReviewSubmitted} taskId={task._id} revieweeName={reviewee.name} />)}
             <PaymentMethodModal isOpen={isPaymentMethodModalOpen} onClose={() => setIsPaymentMethodModalOpen(false)} onSelectPaymentMethod={handleSelectPaymentMethod} bidAmount={selectedBid?.amount || 0} />
             <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} clientSecret={clientSecret} onPaymentSuccess={handlePaymentSuccess} />
-            <Footer />
         </div>
     );
 };

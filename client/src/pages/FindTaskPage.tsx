@@ -59,7 +59,6 @@ const FindTasksPage = () => {
 
   return (
     <div className="flex flex-col h-screen bg-slate-900 text-white">
-      <Navbar />
       <div className="flex-grow grid grid-cols-1 lg:grid-cols-2">
         {/* Left Column: Filters and Task List */}
         <div className="flex flex-col p-4 overflow-y-auto">

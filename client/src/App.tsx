@@ -19,6 +19,8 @@ import ServiceDetailsPage from './pages/ServiceDetailsPage';
 import AllMyServicesPage from './pages/AllmyServicePage';
 import AllMyBookedServicesPage from './pages/AllBookedServices';
 import AllMyTasksPage from './pages/Allmytaskpage';
+import Navbar from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
 
 
 function App() {
@@ -39,6 +41,7 @@ function App() {
 
   return (
     <>
+         <Navbar />
       <NotificationPermissionHandler />
 
       {/* Render ChatWindow if chatWindowData exists */}
@@ -74,6 +77,9 @@ function App() {
 
 
       </Routes>
+
+      <Footer />
+
     </>
   );
 }

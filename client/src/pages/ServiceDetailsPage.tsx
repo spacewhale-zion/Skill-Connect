@@ -130,7 +130,6 @@ const ServiceDetailsPage = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <Navbar />
       <div className="container mx-auto px-4 py-12">
         <div className="bg-white p-8 rounded-lg shadow-lg">
           <span className="text-indigo-600 font-semibold">{service.category}</span>
@@ -214,7 +213,6 @@ const ServiceDetailsPage = () => {
         />
       )}
 
-      <Footer />
     </div>
   );
 };
