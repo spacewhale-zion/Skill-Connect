@@ -46,6 +46,14 @@ const userSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+       portfolio: { // <-- NEW: For Portfolio images
+      type: [String],
+      default: [],
+    },
+    isVerified: { // <-- NEW: For Verification Badge
+      type: Boolean,
+      default: false,
+    },
     averageRating: {
       type: Number,
       default: 0,

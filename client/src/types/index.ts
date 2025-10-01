@@ -16,6 +16,8 @@ export interface AuthUser {
   phone?: string;         // Add this
   bio?: string;           // Add this
   token: string;
+   portfolio?: string[]; // <-- Add this
+  isVerified?: boolean;
 }
 
 // Data needed for user registration
@@ -45,6 +47,7 @@ export interface ProfileUpdateData {
   profilePicture?: string;
   phone?: string;
   bio?: string;
+  portfolio?: string[]; 
 }
 
 export interface Bid {

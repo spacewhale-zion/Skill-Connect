@@ -77,6 +77,12 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     user.skills = req.body.skills || user.skills;
     user.profilePicture = req.body.profilePicture || user.profilePicture;
     user.bio = req.body.bio || user.bio;
+    
+    // --- NEW: Handle portfolio updates ---
+    if (req.body.portfolio) {
+      user.portfolio = req.body.portfolio;
+    }
+
     if (req.body.location && req.body.location.coordinates) {
       user.location = {
         type: 'Point',
@@ -84,6 +90,8 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       };
     }
     const updatedUser = await user.save();
+    
+    // Return all public user fields, including the new ones
     res.json({
       _id: updatedUser._id,
       name: updatedUser.name,
@@ -91,7 +99,9 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       skills: updatedUser.skills,
       profilePicture: updatedUser.profilePicture,
       location: updatedUser.location,
-      bio:updatedUser.bio
+      bio: updatedUser.bio,
+      portfolio: updatedUser.portfolio, // <-- Return portfolio
+      isVerified: updatedUser.isVerified, // <-- Return verification status
     });
   } else {
     res.status(404);

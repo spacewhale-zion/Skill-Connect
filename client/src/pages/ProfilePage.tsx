@@ -4,8 +4,7 @@ import { updateUserProfile, createStripeOnboardingLink } from '../services/userS
 import toast from 'react-hot-toast';
 import { ProfileUpdateData } from '../types';
 import MapView from '../components/map/MapView';
-import { FaEdit, FaStripeS, FaMapMarkerAlt } from 'react-icons/fa';
-import LoadingSpinner from '../components/reviews/SubmitReviewmodal';
+import { FaEdit, FaStripeS, FaMapMarkerAlt, FaCheckCircle } from 'react-icons/fa';
 
 const ProfilePage = () => {
   const { user, updateUser, isLoading } = useAuth();
@@ -19,6 +18,8 @@ const ProfilePage = () => {
     bio: '',
     latitude: '',
     longitude: '',
+    portfolio: '',
+    profilePicture: '',
   });
 
   useEffect(() => {
@@ -29,6 +30,8 @@ const ProfilePage = () => {
         bio: user.bio || '',
         longitude: user.location?.coordinates[0]?.toString() || '',
         latitude: user.location?.coordinates[1]?.toString() || '',
+        portfolio: user.portfolio?.join(', ') || '',
+        profilePicture: user.profilePicture || '',
       });
     }
   }, [user]);
@@ -45,6 +48,8 @@ const ProfilePage = () => {
         bio: user.bio || '',
         longitude: user.location?.coordinates[0]?.toString() || '',
         latitude: user.location?.coordinates[1]?.toString() || '',
+        portfolio: user.portfolio?.join(', ') || '',
+        profilePicture: user.profilePicture || '',
       });
     }
     setIsEditing(false);
@@ -83,11 +88,12 @@ const ProfilePage = () => {
       name: formData.name,
       skills: formData.skills.split(',').map(skill => skill.trim()).filter(Boolean),
       bio: formData.bio,
+      portfolio: formData.portfolio.split(',').map(url => url.trim()).filter(Boolean),
+      profilePicture: formData.profilePicture,
     };
 
     if (formData.latitude && formData.longitude) {
       updatedData.location = {
-        // Remember: GeoJSON format is [longitude, latitude]
         coordinates: [parseFloat(formData.longitude), parseFloat(formData.latitude)],
       };
     }
@@ -118,10 +124,7 @@ const ProfilePage = () => {
   const inputStyles = "w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition";
 
   if (isLoading || !user) {
-    return ( <div className="bg-slate-900 min-h-screen text-white flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    )
+    return <div className="bg-slate-900 min-h-screen text-white text-center py-10">Loading profile...</div>;
   }
 
   const mapCoordinates: [number, number] | undefined = user.location?.coordinates
@@ -140,14 +143,19 @@ const ProfilePage = () => {
         <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl shadow-2xl max-w-4xl mx-auto p-8">
           <div className="flex flex-col md:flex-row items-center gap-6 border-b border-slate-700 pb-6 mb-6">
             <img
-              src={user.profilePicture || `https://ui-avatars.com/api/?name=${user.name}&background=random&size=128`}
+              src={formData.profilePicture || `https://ui-avatars.com/api/?name=${formData.name}&background=random&size=128`}
               alt="Profile"
               className="w-32 h-32 rounded-full border-4 border-slate-600 flex-shrink-0"
             />
             <div className="flex-grow text-center md:text-left w-full">
               <div className="flex justify-between items-start">
                 <div>
-                  <h1 className="text-3xl font-extrabold text-white">{user.name}</h1>
+                  <div className="flex items-center gap-2">
+                     <h1 className="text-3xl font-extrabold text-white">{user.name}</h1>
+                     {user.isVerified && (
+                        <FaCheckCircle className="text-sky-400" title="Verified Provider" />
+                     )}
+                  </div>
                   <p className="text-lg text-slate-400 mt-1">{user.email}</p>
                 </div>
                 {!isEditing && (
@@ -156,7 +164,20 @@ const ProfilePage = () => {
                   </button>
                 )}
               </div>
-              {typeof user.averageRating === 'number' && user.averageRating > 0 && (
+               {isEditing && (
+                 <div className="mt-4 text-left">
+                    <label className="block text-sm font-medium text-slate-300 mb-1">Profile Picture URL</label>
+                    <input
+                        type="text"
+                        name="profilePicture"
+                        value={formData.profilePicture}
+                        onChange={handleInputChange}
+                        className={inputStyles}
+                        placeholder="https://example.com/your-image.jpg"
+                    />
+                </div>
+              )}
+              {typeof user.averageRating === 'number' && user.averageRating > 0 && !isEditing && (
                 <div className="flex items-center mt-3 justify-center md:justify-start">
                   <span className="text-xl font-bold text-yellow-400 mr-2">⭐ {user.averageRating.toFixed(1)}</span>
                   <span className="text-slate-400">Average Rating</span>
@@ -207,6 +228,31 @@ const ProfilePage = () => {
               )}
             </div>
             
+            <div>
+              <label className="block text-lg font-semibold text-slate-300 mb-2">Portfolio</label>
+              {isEditing ? (
+                <>
+                  <textarea
+                    name="portfolio"
+                    value={formData.portfolio}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className={inputStyles}
+                    placeholder="https://example.com/image1.jpg, https://example.com/image2.png"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Add image URLs separated by commas.</p>
+                </>
+              ) : (
+                user.portfolio && user.portfolio.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                    {user.portfolio.map((url, index) => (
+                      <img key={index} src={url} alt={`Portfolio item ${index + 1}`} className="w-full h-40 object-cover rounded-lg border-2 border-slate-700"/>
+                    ))}
+                  </div>
+                ) : <p className="text-slate-500">No portfolio images added yet.</p>
+              )}
+            </div>
+
             <div>
               <label className="block text-lg font-semibold text-slate-300 mb-2">Your Location</label>
               {isEditing ? (
