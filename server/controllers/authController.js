@@ -119,4 +119,89 @@ const getUserProfile = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, loginUser, getUserProfile };
+
+/**
+ * @desc    Forgot Password - Generate and send reset token
+ * @route   POST /api/auth/forgot-password
+ * @access  Public
+ */
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    res.status(404);
+    throw new Error('There is no user with that email address.');
+  }
+
+  // Generate the random reset token
+  const resetToken = user.createPasswordResetToken();
+  await user.save({ validateBeforeSave: false });
+
+  // Create the reset URL for the frontend
+  const resetURL = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+  const message = `Forgot your password? Submit a PATCH request with your new password to: ${resetURL}.\nIf you didn't forget your password, please ignore this email.`;
+
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: 'Your password reset token (valid for 10 min)',
+      text: message,
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Token sent to email!',
+    });
+  } catch (err) {
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    res.status(500);
+    throw new Error('There was an error sending the email. Try again later!');
+  }
+});
+
+
+/**
+ * @desc    Reset Password
+ * @route   PATCH /api/auth/reset-password/:token
+ * @access  Public
+ */
+const resetPassword = asyncHandler(async (req, res) => {
+  // 1. Get user based on the token
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(req.params.token)
+    .digest('hex');
+
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+
+  // 2. If token has not expired, and there is a user, set the new password
+  if (!user) {
+    res.status(400);
+    throw new Error('Token is invalid or has expired.');
+  }
+
+  user.password = req.body.password;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+
+  // 3. Log the user in, send JWT
+  const token = generateToken(user._id);
+  res.status(200).json({
+    status: 'success',
+    token,
+    data: {
+      user,
+    },
+  });
+});
+
+export { registerUser, loginUser, getUserProfile ,forgotPassword, resetPassword };

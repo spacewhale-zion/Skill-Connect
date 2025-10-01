@@ -13,6 +13,7 @@ import type { Task, Service } from '../types/index';
 import { FaPlus, FaTasks, FaCheckDouble, FaBolt, FaConciergeBell } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { get } from 'http';
+import LoadingSpinner from '../components/layout/LoadingSpinner';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -76,7 +77,11 @@ const DashboardPage = () => {
   }, [assignedTasks]);
   
   if (isLoading) {
-    return <div className="text-center text-white py-10">Loading dashboard...</div>;
+    return (
+      <div className="bg-slate-900 min-h-screen text-white flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   // Logic for tab content

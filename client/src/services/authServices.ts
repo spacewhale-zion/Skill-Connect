@@ -20,3 +20,15 @@ export const getMyProfile = async (): Promise<AuthUser> => {
   const { data } = await api.get('/auth/me');
   return data;
 };
+
+
+export const forgotPassword = async (email: string): Promise<{ message: string }> => {
+  const { data } = await api.post('/auth/forgot-password', { email });
+  return data;
+};
+
+export const resetPassword = async (password: string, token: string): Promise<AuthUser> => {
+  const { data } = await api.patch(`/auth/reset-password/${token}`, { password });
+  // The backend sends back the user and a new JWT upon successful reset
+  return data.data.user; 
+};

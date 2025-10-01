@@ -40,28 +40,22 @@ const createService = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const getServices = asyncHandler(async (req, res) => {
-  const { lat, lng, category, keyword, maxPrice } = req.query;
-  const userId = req.user?._id; // Assuming auth middleware sets req.user
+  // Add 'radius' to the destructured query params
+  const { lat, lng, category, keyword, maxPrice, radius } = req.query;
+  const userId = req.user?._id; 
   
   let query = { isActive: true };
 
-  // --- Exclude services posted by the current user ---
   if (userId) {
     query.provider = { $ne: userId };
   }
-
-  // --- KEYWORD SEARCH: prefix or partial match ---
   if (keyword) {
-    const regex = new RegExp('^' + keyword, 'i'); // starts with keyword, case-insensitive
+    const regex = new RegExp('^' + keyword, 'i');
     query.title = regex;
   }
-
-  // --- CATEGORY FILTER ---
   if (category) {
     query.category = category;
   }
-
-  // --- PRICE FILTER: only show services <= maxPrice ---
   if (maxPrice) {
     query.price = { $lte: parseInt(maxPrice) };
   }
@@ -69,16 +63,20 @@ const getServices = asyncHandler(async (req, res) => {
   let services;
 
   if (lat && lng) {
-    // Geospatial search
+    // Convert radius from km to meters for MongoDB
+    const searchRadius = radius ? parseInt(radius) * 1000 : 50 * 1000; // Default to 50km if not provided
+
     services = await Service.aggregate([
       {
         $geoNear: {
           near: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
           distanceField: 'distance',
+          maxDistance: searchRadius, // <-- Use the radius here
           spherical: true,
-          query: query, // pre-filtered with keyword, category, maxPrice, excluding own services
+          query: query,
         },
       },
+      // ... rest of the aggregation pipeline is unchanged
       {
         $lookup: {
           from: 'users',
@@ -103,7 +101,6 @@ const getServices = asyncHandler(async (req, res) => {
       }
     ]);
   } else {
-    // Regular find without geospatial filtering
     services = await Service.find(query).populate('provider', 'name averageRating');
   }
 

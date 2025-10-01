@@ -7,6 +7,7 @@ import type { Notification } from '../types';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import { FaBell, FaDollarSign, FaCommentDots, FaCheckCircle, FaBriefcase } from 'react-icons/fa';
+import LoadingSpinner from '../components/layout/LoadingSpinner';
 
 interface NotificationsPageProps {
   openChatWindow: (conversationId: string, recipientId: string, recipientName: string) => void;
@@ -86,7 +87,9 @@ const NotificationsPage = ({ openChatWindow, activeChatId }: NotificationsPagePr
     }
   };
 
-  if (loading) return <div>Loading notifications...</div>;
+  if (loading) return <div className="bg-slate-900 min-h-screen text-white flex items-center justify-center">
+        <LoadingSpinner/>
+      </div>;
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-900 text-white">

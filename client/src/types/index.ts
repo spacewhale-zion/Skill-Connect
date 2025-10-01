@@ -105,6 +105,7 @@ export interface ServiceSearchParams {
   category?: string;
   keyword?: string;
   maxPrice?: number;
+  radius?: number; 
  
 }
 

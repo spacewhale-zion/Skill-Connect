@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react'; // Import useEffect and useRef
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/authContext.tsx';
 import toast from 'react-hot-toast';
 import { useNavigate, Link } from 'react-router-dom';
 import useFcmToken from '../hooks/useFCMtoken.ts';
-import * as THREE from "three"; // Import Three.js
+import * as THREE from "three";
 
 const RegisterPage = () => {
   const [name, setName] = useState('');
@@ -15,10 +15,9 @@ const RegisterPage = () => {
 
   const { register } = useAuth();
   const navigate = useNavigate();
-  const { token } = useFcmToken();
+  const { token: fcmToken } = useFcmToken();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // --- Three.js Solar System Background Effect ---
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -100,8 +99,47 @@ const RegisterPage = () => {
     };
   }, []);
 
-  const handleGetLocation = () => { /* ... existing code ... */ };
-  const handleSubmit = async (e: React.FormEvent) => { /* ... existing code ... */ };
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser.');
+      return;
+    }
+    toast.loading('Fetching location...');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        toast.dismiss();
+        toast.success('Location found!');
+        setLongitude(position.coords.longitude.toString());
+        setLatitude(position.coords.latitude.toString());
+      },
+      () => {
+        toast.dismiss();
+        toast.error('Unable to retrieve your location.');
+      }
+    );
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await register({
+        name,
+        email,
+        password,
+        location: {
+          coordinates: [parseFloat(longitude), parseFloat(latitude)],
+        },
+        fcmToken: fcmToken || undefined,
+      });
+      toast.success('Registration successful!');
+      navigate('/dashboard');
+    } catch (error) {
+      toast.error('Registration failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const inputStyles = "w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition";
 

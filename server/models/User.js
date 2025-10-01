@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const userSchema = new mongoose.Schema(
   {
@@ -21,6 +22,8 @@ const userSchema = new mongoose.Schema(
       type:String,
       default:""
     },
+    passwordResetToken: String,
+    passwordResetExpires: Date,
    profilePicture: {
   type: String,
   default: function () {
@@ -76,6 +79,21 @@ userSchema.pre('save', async function (next) {
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
+
+// --- Add this new method to the User schema ---
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  // Set token to expire in 10 minutes
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+  return resetToken;
+};
 
 // Instance method to compare entered password with the hashed password
 userSchema.methods.matchPassword = async function (enteredPassword) {

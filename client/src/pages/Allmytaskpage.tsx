@@ -5,6 +5,7 @@ import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import toast from 'react-hot-toast';
 import type { Task } from '../types/index';
+import LoadingSpinner from '../components/layout/LoadingSpinner';
 
 const AllMyTasksPage = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -46,12 +47,9 @@ const AllMyTasksPage = () => {
   }, [tasks]);
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col min-h-screen bg-slate-900 text-white">
-        <div className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold text-white mb-6">All My Tasks</h1>
-          <div>Loading tasks...</div>
-        </div>
+  return (
+      <div className="bg-slate-900 min-h-screen text-white flex items-center justify-center">
+        <LoadingSpinner />
       </div>
     );
   }

@@ -16,7 +16,8 @@ const ServiceCard = ({ service }: { service: Service }) => {
           <p className="text-xs font-semibold uppercase rounded-full text-pink-400">
             {service.category}
           </p>
-          <span className={`text-xs font-semibold py-1 px-3 rounded-full ${statusColors[statusLabel]}`}>
+          {/* Added some right margin to the status label */}
+          <span className={`text-xs font-semibold py-1 px-3 rounded-full ${statusColors[statusLabel]} mr-12`}>
             {statusLabel}
           </span>
         </div>

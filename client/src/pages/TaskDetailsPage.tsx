@@ -15,6 +15,7 @@ import PaymentMethodModal from '../components/payment/PaymentMethodModal.tsx';
 import type { AuthUser, Bid, Task } from '../types/index.ts';
 import { useNotifications } from '../context/notificationContext.tsx';
 import { FaStar } from 'react-icons/fa';
+import LoadingSpinner from '../components/layout/LoadingSpinner.tsx';
 
 const TaskDetailsPage = () => {
     const { taskId } = useParams<{ taskId: string }>();
@@ -156,8 +157,10 @@ const TaskDetailsPage = () => {
             updateUser({ averageRating: updatedReviewee.averageRating });
         }
     };
-
-    if (loading) return <div className="bg-slate-900 min-h-screen text-white text-center py-10">Loading Task...</div>;
+    // setLoading(true);
+    if (loading)  return <div className="bg-slate-900 min-h-screen text-white flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
     if (!task) return <div className="bg-slate-900 min-h-screen text-white text-center py-10">Task not found.</div>;
 
     const isOwner = user && user._id === task.taskSeeker._id;

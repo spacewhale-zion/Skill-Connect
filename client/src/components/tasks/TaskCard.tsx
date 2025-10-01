@@ -34,7 +34,7 @@ const TaskCard = ({ task }: { task: Task }) => {
         {/* Meta Info */}
         <div className="flex flex-wrap items-center text-sm text-slate-400 mb-4">
           <span className="text-lg font-bold text-yellow-400 mr-6">₹{task.budget.amount}</span>
-          <span className="flex items-center mr-6"><FaMapMarkerAlt className="mr-2" />{task.location.coordinates.join(', ')}</span>
+          <span className="flex items-center mr-6"><FaMapMarkerAlt className="mr-2" />{task.location.coordinates.map(coord => coord.toFixed(2)).join(', ')}</span>
           <span className="flex items-center"><FaClock className="mr-2" />{new Date(task.createdAt).toLocaleDateString()}</span>
         </div>
 

@@ -29,10 +29,8 @@ const LoginPage = () => {
       0.1,
       1000
     );
-    // --- CHANGE: Move camera back to see more ---
     camera.position.z = 150;
 
-    // --- Starfield ---
     const starsGeometry = new THREE.BufferGeometry();
     const starCount = 5000;
     const positions = new Float32Array(starCount * 3);
@@ -50,10 +48,7 @@ const LoginPage = () => {
     const stars = new THREE.Points(starsGeometry, starsMaterial);
     scene.add(stars);
 
-    // --- Solar System ---
-    // --- CHANGE: Increased sun size significantly ---
     const sunGeometry = new THREE.SphereGeometry(50, 32, 32); 
-    // --- CHANGE: Use MeshBasicMaterial for a consistent glow that isn't affected by scene light ---
     const sunMaterial = new THREE.MeshBasicMaterial({ color:'#facc15' });
     const sun = new THREE.Mesh(sunGeometry, sunMaterial);
     scene.add(sun);
@@ -65,7 +60,6 @@ const LoginPage = () => {
       new THREE.MeshLambertMaterial({ color: 0x32CD32 }),
     ];
     const planetRadii = [5, 8, 7];
-    // --- CHANGE: Increased orbit radii to make the system larger ---
     const orbitRadii = [80, 110, 140];
 
     for (let i = 0; i < planetMaterials.length; i++) {
@@ -86,7 +80,6 @@ const LoginPage = () => {
       stars.rotation.x = elapsedTime * 0.02;
       stars.rotation.y = elapsedTime * 0.01;
       
-      // --- CHANGE: More pronounced pulse effect ---
       const pulseScale = 1 + Math.sin(elapsedTime * 1.5) * 0.1;
       sun.scale.set(pulseScale, pulseScale, pulseScale);
 
@@ -112,7 +105,6 @@ const LoginPage = () => {
     return () => {
       window.removeEventListener('resize', onWindowResize);
       renderer.dispose();
-      // ... cleanup geometry and materials
     };
   }, []);
 
@@ -133,7 +125,6 @@ const LoginPage = () => {
     <div className="relative flex items-center justify-center min-h-screen bg-gradient-to-b from-indigo-900 to-purple-900 text-white overflow-hidden">
       <canvas
         ref={canvasRef}
-        // --- CHANGE: Increased opacity for more visibility ---
         className="absolute top-0 left-0 w-full h-full opacity-50 z-0"
       ></canvas>
 
@@ -153,6 +144,13 @@ const LoginPage = () => {
             <label htmlFor="password" className="block text-sm font-medium text-slate-300">Password</label>
             <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className={`mt-1 ${inputStyles}`} placeholder="••••••••" />
           </div>
+
+          <div className="text-right text-sm">
+            <Link to="/forgot-password" className="font-medium text-slate-400 hover:text-yellow-400">
+              Forgot password?
+            </Link>
+          </div>
+
           <button type="submit" className="w-full px-4 py-3 font-bold text-slate-900 bg-yellow-400 rounded-lg hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 focus:ring-offset-slate-800 transition-colors">
             Login
           </button>
