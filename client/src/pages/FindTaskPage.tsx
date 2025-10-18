@@ -32,7 +32,7 @@ const FindTasksPage = () => {
     category: '',
   });
   const [mapCenter, setMapCenter] = useState<[number, number]>([20.5937, 78.9629]);
-
+  
   const userLocationIcon = new Icon({
     iconUrl: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
     iconSize: [32, 32],
