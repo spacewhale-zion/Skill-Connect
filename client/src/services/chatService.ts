@@ -1,6 +1,6 @@
 // src/services/chatService.ts
 import api from '../api/axiosConfig';
-import { AuthUser } from '../types';
+import { AuthUser } from '@/types';
 
 export interface Message {
   _id: string;

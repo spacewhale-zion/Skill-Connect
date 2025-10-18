@@ -1,4 +1,4 @@
-import type { Task } from '../../types/index';
+import type { Task } from '@/types/index';
 import { Link } from 'react-router-dom';
 import { FaMapMarkerAlt, FaClock, FaGavel } from 'react-icons/fa';
 

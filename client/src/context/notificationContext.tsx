@@ -2,9 +2,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './authContext';
-import { fetchNotifications } from '../services/notificationServices';
+import { fetchNotifications } from '@/services/notificationServices';
 import toast from 'react-hot-toast';
-import type { Notification } from '../types';
+import type { Notification } from '@/types';
 
 interface NotificationContextType {
   notifications: Notification[];

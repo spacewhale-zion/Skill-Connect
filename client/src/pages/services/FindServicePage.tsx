@@ -1,22 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../context/authContext';
-import { getServices } from '../services/serviceServices';
-import ServiceCard from '../components/services/ServiceCardOffer';
+import { useAuth } from '../../context/authContext';
+import { getServices } from '@/services/serviceServices';
+import ServiceCard from '@/components/services/ServiceCardOffer';
 import toast from 'react-hot-toast';
-import { Service, ServiceSearchParams } from '../types';
+import { Service, ServiceSearchParams } from '@/types';
 import { FaCrosshairs } from 'react-icons/fa';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { Icon, LatLngExpression } from 'leaflet';
-import { Link } from 'react-router-dom';
 
-// Helper component to programmatically change the map's view
-function ChangeMapView({ center, zoom }: { center: LatLngExpression; zoom: number }) {
-    const map = useMap();
-    useEffect(() => {
-        map.setView(center, zoom);
-    }, [center, zoom, map]);
-    return null;
-}
+
+// // Helper component to programmatically change the map's view
+// function ChangeMapView({ center, zoom }: { center: LatLngExpression; zoom: number }) {
+//     const map = useMap();
+//     useEffect(() => {
+//         map.setView(center, zoom);
+//     }, [center, zoom, map]);
+//     return null;
+// }
 
 const FindServicesPage = () => {
   const { user } = useAuth();

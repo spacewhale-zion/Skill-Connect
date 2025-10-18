@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../context/authContext';
-import { getTasks } from '../services/taskServices';
+import { useAuth } from '../../context/authContext';
+import { getTasks } from '@/services/taskServices';
 import toast from 'react-hot-toast';
-import TaskCard from '../components/tasks/TaskCard';
+import TaskCard from '@/components/tasks/TaskCard';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import type { Task, TaskSearchParams } from '../types/index';
+import type { Task, TaskSearchParams } from '@/types/index';
 import { FaCrosshairs } from 'react-icons/fa';
 import { Icon, LatLngExpression } from 'leaflet';
 

@@ -1,19 +1,18 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { useAuth } from '../context/authContext';
-import { getMyPostedTasks, getMyAssignedTasks, getAllMyTasks } from '../services/taskServices';
-import { getMyOfferedServices } from '../services/serviceServices';
-import TaskCard from '../components/tasks/TaskCard';
-import ServiceCard from '../components/services/ServiceCardDashBoard';
-import PostTaskModal from '../components/tasks/PostTaskModal';
-import PostServiceModal from '../components/services/PostServiceModel';
-import StatCard from '../components/dasboard/StatCard';
-import EarningsSpendChart from '../components/dasboard/EarningSpendChart';
+import { useAuth } from '../../context/authContext';
+import { getMyPostedTasks, getMyAssignedTasks, getAllMyTasks } from '@/services/taskServices';
+import { getMyOfferedServices } from '@/services/serviceServices';
+import TaskCard from '@/components/tasks/TaskCard';
+import ServiceCard from '@/components/services/ServiceCardDashBoard';
+import PostTaskModal from '@/components/tasks/PostTaskModal';
+import PostServiceModal from '@/components/services/PostServiceModel';
+import StatCard from '@/components/dasboard/StatCard';
+import EarningsSpendChart from '@/components/dasboard/EarningSpendChart';
 import toast from 'react-hot-toast';
-import type { Task, Service } from '../types/index';
+import type { Task, Service } from '@/types/index';
 import { FaPlus, FaTasks, FaCheckDouble, FaBolt, FaConciergeBell } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-import { get } from 'http';
-import LoadingSpinner from '../components/layout/LoadingSpinner';
+import LoadingSpinner from '@/components/layout/LoadingSpinner';
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -53,7 +52,7 @@ const DashboardPage = () => {
   // Calculations for dashboard data
   const totalEarned = useMemo(() => {
     return Alltasks
-      .filter(task => (task.status === 'Completed' && task.assignedProvider===user?._id))
+      .filter(task => (task.status === 'Completed' && task.assignedProvider._id==user?._id))
       .reduce((sum, task) => sum + task.acceptedBidAmount, 0);
   }, [assignedTasks]);
 

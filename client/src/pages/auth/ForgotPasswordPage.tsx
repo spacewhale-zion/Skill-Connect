@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { forgotPassword } from '../services/authServices';
+import { forgotPassword } from '@/services/authServices';
 import { Link } from 'react-router-dom';
 
 const ForgotPasswordPage = () => {

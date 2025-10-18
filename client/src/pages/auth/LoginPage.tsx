@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../context/authContext';
+import { useAuth } from '../../context/authContext';
 import toast from 'react-hot-toast';
 import { useNavigate, Link } from 'react-router-dom';
 import * as THREE from "three";

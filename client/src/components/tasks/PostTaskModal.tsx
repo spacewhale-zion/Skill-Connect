@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { createTask } from '../../services/taskServices';
-import { TaskCreationData } from '../../types';
+import { createTask } from '@/services/taskServices';
+import { TaskCreationData } from '@/types';
 
 interface PostTaskModalProps {
   isOpen: boolean;

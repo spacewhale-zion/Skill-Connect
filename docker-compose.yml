@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # ==========================
+  # Backend (Express / Node)
+  # ==========================
+  server:
+    build:
+      context: ./server
+    ports:
+      - "5000:5000"  # Map container port 5000 to host
+    env_file:
+      - .env         # Load all environment variables from .env file
+    volumes:
+      # Mount Firebase credentials inside container (read-only)
+      - ./server/config/firebase-service-account.json:/app/server/config/firebase-service-account.json:ro
+    depends_on:
+      - mongo
+    networks:
+      - skillconnect-net
+
+  # ==========================
+  # Frontend (React / Vite)
+  # ==========================
+  client:
+    build:
+      context: ./client
+      args:
+        # Pass Vite environment variables during build time
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_STRIPE_KEY: ${VITE_STRIPE_KEY}
+    ports:
+      - "3000:80"   # Host port 3000 -> container port 80 (Nginx)
+    depends_on:
+      - server
+    networks:
+      - skillconnect-net
+    env_file:
+      - .env
+
+  # ==========================
+  # MongoDB
+  # ==========================
+  mongo:
+    image: mongo:latest
+    container_name: skillconnect-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - skillconnect-net
+
+# ==========================
+# Shared network and volumes
+# ==========================
+networks:
+  skillconnect-net:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local

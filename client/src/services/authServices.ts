@@ -1,6 +1,6 @@
 // .t// src/services/authService.ts
 import api from '../api/axiosConfig';
-import { UserCredentials, UserRegistrationData,AuthUser } from '../types/index'; // We will create this types file next
+import { UserCredentials, UserRegistrationData,AuthUser } from '@/types/index'; // We will create this types file next
 
 
 export const loginUser = async (credentials: UserCredentials) => {

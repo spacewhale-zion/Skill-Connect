@@ -1,5 +1,5 @@
 import api from '../api/axiosConfig';
-import { Review, AuthUser } from '../types';
+import { Review, AuthUser } from '@/types';
 
 export interface ReviewCreationData {
   rating: number;

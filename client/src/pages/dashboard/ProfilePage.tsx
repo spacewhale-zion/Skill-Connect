@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/authContext';
-import { updateUserProfile, createStripeOnboardingLink } from '../services/userServices';
+import { useAuth } from '../../context/authContext';
+import { updateUserProfile, createStripeOnboardingLink } from '@/services/userServices';
 import toast from 'react-hot-toast';
-import { ProfileUpdateData } from '../types';
-import MapView from '../components/map/MapView';
+import { ProfileUpdateData } from '@/types';
+import MapView from '@/components/map/MapView';
 import { FaEdit, FaStripeS, FaMapMarkerAlt, FaCheckCircle } from 'react-icons/fa';
+import ProfilePicModal from '@/components/profile/ProfilePicModal'; // Import the modal
 
 const ProfilePage = () => {
   const { user, updateUser, isLoading } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isOnboarding, setIsOnboarding] = useState(false);
+  const [isProfilePicModalOpen, setIsProfilePicModalOpen] = useState(false); // State for modal
 
   const [formData, setFormData] = useState({
     name: '',
@@ -54,7 +56,7 @@ const ProfilePage = () => {
     }
     setIsEditing(false);
   };
-  
+
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
       toast.error('Geolocation is not supported by your browser.');
@@ -120,7 +122,7 @@ const ProfilePage = () => {
       setIsOnboarding(false);
     }
   };
-  
+
   const inputStyles = "w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition";
 
   if (isLoading || !user) {
@@ -130,6 +132,9 @@ const ProfilePage = () => {
   const mapCoordinates: [number, number] | undefined = user.location?.coordinates
     ? [user.location.coordinates[1], user.location.coordinates[0]]
     : undefined;
+
+  // Use formData for the profile picture URL
+  const profilePicUrl = formData.profilePicture || `https://ui-avatars.com/api/?name=${formData.name}&background=random&size=128`;
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-900 text-white relative">
@@ -143,9 +148,10 @@ const ProfilePage = () => {
         <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl shadow-2xl max-w-4xl mx-auto p-8">
           <div className="flex flex-col md:flex-row items-center gap-6 border-b border-slate-700 pb-6 mb-6">
             <img
-              src={formData.profilePicture || `https://ui-avatars.com/api/?name=${formData.name}&background=random&size=128`}
+              src={profilePicUrl} // Use state variable for URL
               alt="Profile"
-              className="w-32 h-32 rounded-full border-4 border-slate-600 flex-shrink-0"
+              className="w-32 h-32 rounded-full border-4 border-slate-600 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity" // Add cursor-pointer and hover effect
+              onClick={() => setIsProfilePicModalOpen(true)} // Add onClick to open modal
             />
             <div className="flex-grow text-center md:text-left w-full">
               <div className="flex justify-between items-start">
@@ -185,7 +191,7 @@ const ProfilePage = () => {
               )}
             </div>
           </div>
-          
+
           <div className="my-8 p-6 bg-slate-900/50 rounded-lg border border-slate-700">
             <h3 className="text-lg font-semibold text-white">Payouts Setup</h3>
             <p className="text-sm text-slate-400 mt-1">
@@ -227,7 +233,7 @@ const ProfilePage = () => {
                 </div>
               )}
             </div>
-            
+
             <div>
               <label className="block text-lg font-semibold text-slate-300 mb-2">Portfolio</label>
               {isEditing ? (
@@ -286,6 +292,13 @@ const ProfilePage = () => {
           </form>
         </div>
       </main>
+      {/* Render the modal */}
+      <ProfilePicModal
+        isOpen={isProfilePicModalOpen}
+        onClose={() => setIsProfilePicModalOpen(false)}
+        imageUrl={profilePicUrl} // Pass the correct image URL
+        altText={`${user.name}'s profile picture`}
+      />
     </div>
   );
 };

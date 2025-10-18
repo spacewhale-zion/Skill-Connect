@@ -5,7 +5,7 @@ import api from '../api/axiosConfig';
 
 // Represents the full Task object received from the backend
 
-import {Task,TaskCreationData,TaskSearchParams} from '../types/index'
+import {Task,TaskCreationData,TaskSearchParams} from '@/types/index'
 
 // --- API Service Functions ---
 

@@ -1,8 +1,8 @@
-import Hero from '../components/home/Hero';
-import Features from '../components/home/Features';
-import Testimonials from '../components/home/Testimonials';
+import Hero from '@/components/home/Hero';
+import Features from '@/components/home/Features';
+import Testimonials from '@/components/home/Testimonials';
 
-import Showcase from '../components/home/Showcase';
+import Showcase from '@/components/home/Showcase';
 
 const HomePage = () => {
   return (

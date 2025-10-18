@@ -1,9 +1,8 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../context/authContext';
-import Navbar from '../components/layout/Navbar'; 
-import Footer from '../components/layout/Footer';
-import Dashboard from './Dashboard'
-import LoadingSpinner from '../components/layout/LoadingSpinner';
+import { useAuth } from '../../context/authContext';
+
+import Dashboard from './DashboardPage'
+import LoadingSpinner from '@/components/layout/LoadingSpinner';
 
 const DashboardLayout = () => {
   const { user, isLoading } = useAuth();

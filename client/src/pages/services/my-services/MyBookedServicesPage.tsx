@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { getMyPostedTasks } from '../services/taskServices';
-import TaskCard from '../components/tasks/TaskCard';
-import Navbar from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
+import { getMyPostedTasks } from '@/services/taskServices';
+import TaskCard from '@/components/tasks/TaskCard';
+import Footer from '@/components/layout/Footer';
 import toast from 'react-hot-toast';
-import type { Task } from '../types/index';
-import LoadingSpinner from '../components/layout/LoadingSpinner';
+import type { Task } from '@/types/index';
+import LoadingSpinner from '@/components/layout/LoadingSpinner';
 
 const AllMyBookedServicesPage = () => {
   const [bookedServices, setBookedServices] = useState<Task[]>([]);

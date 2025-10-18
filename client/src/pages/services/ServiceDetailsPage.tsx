@@ -1,22 +1,20 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/authContext';
-import { getServiceById, bookService } from '../services/serviceServices';
-import { getTaskById, markTaskAsCompletedByProvider, completeTask } from '../services/taskServices';
+import { useAuth } from '../../context/authContext';
+import { getServiceById, bookService } from '@/services/serviceServices';
+import { getTaskById, markTaskAsCompletedByProvider, completeTask } from '@/services/taskServices';
 import toast from 'react-hot-toast';
-import MapView from '../components/map/MapView';
-import PaymentModal from '../components/payment/PaymentModal';
-import PaymentMethodModal from '../components/payment/PaymentMethodModal';
-import SubmitReviewModal from '../components/reviews/SubmitReviewmodal';
-import { Service, Task, AuthUser } from '../types';
-import { useNotifications } from '../context/notificationContext';
-import LoadingSpinner from  '../components/layout/LoadingSpinner';
+import MapView from '@/components/map/MapView';
+import PaymentModal from '@/components/payment/PaymentModal';
+import PaymentMethodModal from '@/components/payment/PaymentMethodModal';
+import SubmitReviewModal from '@/components/reviews/SubmitReviewmodal';
+import { Service, Task } from '@/types';
+import LoadingSpinner from  '@/components/layout/LoadingSpinner';
 
 const ServiceDetailsPage = () => {
   const { serviceId } = useParams<{ serviceId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { socket } = useNotifications();
 
   const [service, setService] = useState<Service | null>(null);
   const [task, setTask] = useState<Task | null>(null);

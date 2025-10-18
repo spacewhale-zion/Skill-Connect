@@ -10,17 +10,19 @@ export default defineConfig({
     basicSsl(),
     tailwindcss(),
   ],
-   server: {
-    https: false, 
-     port: 3000,
+   server: { 
+     port: 5173,
+    open: true,
   },
-  // --- UPDATED FIX ---
-  // This block prevents "dual package" issues by forcing Vite to always
-  // resolve react and react-dom to the single copy in your node_modules.
+  preview:{
+    port: 4173,
+  },
+ 
   resolve: {
     alias: {
       'react': path.resolve(__dirname, './node_modules/react'),
       'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
+       '@': path.resolve(__dirname, './src'),
     },
   },
 })

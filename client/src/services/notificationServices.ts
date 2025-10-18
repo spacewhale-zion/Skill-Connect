@@ -1,7 +1,7 @@
 // spacewhale-zion/skill-connect/Skill-Connect-7116ae5702cce0b0c74858586a22e6d652228ad1/client/src/services/notificationServices.ts
 import api from '../api/axiosConfig';
 
-import type { Notification } from '../types';
+import type { Notification } from '@/types';
 
 
 export const fetchNotifications = async (): Promise<Notification[]> => {

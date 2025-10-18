@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.env
+*.local
+config/firebase-service-account.json # Exclude sensitive file if mounting via volume
+.git
+.gitignore
+.vscode

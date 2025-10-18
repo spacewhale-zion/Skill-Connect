@@ -1,9 +1,9 @@
 // src/context/AuthContext.tsx
 import  { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { loginUser, registerUser } from '../services/authServices';
-import { AuthUser, UserCredentials, UserRegistrationData } from '../types';
+import { loginUser, registerUser } from '@/services/authServices';
+import { AuthUser, UserCredentials, UserRegistrationData } from '@/types';
 import api from '../api/axiosConfig';
-import { getMyProfile } from '../services/authServices';
+import { getMyProfile } from '@/services/authServices';
 
 interface AuthContextType {
   user: AuthUser | null;

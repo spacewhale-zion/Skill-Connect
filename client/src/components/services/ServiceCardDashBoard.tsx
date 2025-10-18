@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Service } from '../../types';
+import { Service } from '@/types';
 
 const statusColors: Record<string, string> = {
   Open: "bg-green-500/20 text-green-400",

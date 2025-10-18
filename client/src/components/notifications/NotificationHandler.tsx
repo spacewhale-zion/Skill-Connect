@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import useFcmToken from '../../hooks/useFCMtoken';
 import { useAuth } from '../../context/authContext';
-import { saveFcmToken } from '../../services/userServices';
+import { saveFcmToken } from '@/services/userServices';
 import toast from 'react-hot-toast';
 
 const NotificationPermissionHandler = () => {

@@ -1,6 +1,6 @@
 import api from '../api/axiosConfig';
 
-import type {Bid} from '../types'
+import type {Bid} from '@/types'
 
 export const getBidsForTask = async (taskId: string): Promise<Bid[]> => {
   const { data } = await api.get(`/tasks/${taskId}/bids`);

@@ -1,8 +1,8 @@
 import api from '../api/axiosConfig';
-import { AuthUser } from '../types'; // Assuming AuthUser is in your types file
+import { AuthUser } from '@/types'; // Assuming AuthUser is in your types file
 
 // Represents the data that can be updated
-import type {ProfileUpdateData} from '../types/index'
+import type {ProfileUpdateData} from '@/types/index'
 
 /**
  * Updates the currently logged-in user's profile.

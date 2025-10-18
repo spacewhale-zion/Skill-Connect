@@ -1,5 +1,5 @@
 import api from '../api/axiosConfig';
-import { Service, Task,ServiceSearchParams } from '../types';
+import { Service, Task,ServiceSearchParams } from '@/types';
 
 // Define the shape of the data needed to create a service
 export interface ServiceCreationData {

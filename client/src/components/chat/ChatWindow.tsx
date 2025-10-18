@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/authContext";
 import { useNotifications } from "../../context/notificationContext";
-import { fetchChatHistory, Message, markMessageAsRead } from "../../services/chatService";
+import { fetchChatHistory, Message, markMessageAsRead } from "@/services/chatService";
 import toast from "react-hot-toast";
-import type { AuthUser } from "../../types";
+import type { AuthUser } from "@/types";
 import { Send, ChevronDown, X } from 'lucide-react';
 
 interface ChatWindowProps {

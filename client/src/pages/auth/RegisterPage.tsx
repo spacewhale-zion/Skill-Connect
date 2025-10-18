@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../context/authContext.tsx';
+import { useAuth } from '../../context/authContext.tsx';
 import toast from 'react-hot-toast';
 import { useNavigate, Link } from 'react-router-dom';
-import useFcmToken from '../hooks/useFCMtoken.ts';
+import useFcmToken from '../../hooks/useFCMtoken.ts';
 import * as THREE from "three";
 
 const RegisterPage = () => {

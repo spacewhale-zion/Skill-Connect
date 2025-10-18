@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
-import { fetchNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../services/notificationServices';
+import { fetchNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '@/services/notificationServices';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { useNotifications } from '../context/notificationContext';
-import type { Notification } from '../types';
-import Navbar from '../components/layout/Navbar';
-import Footer from '../components/layout/Footer';
+import { useNotifications } from '../../context/notificationContext';
+import type { Notification } from '@/types';
+
 import { FaBell, FaDollarSign, FaCommentDots, FaCheckCircle, FaBriefcase } from 'react-icons/fa';
-import LoadingSpinner from '../components/layout/LoadingSpinner';
+import LoadingSpinner from '@/components/layout/LoadingSpinner';
 
 interface NotificationsPageProps {
   openChatWindow: (conversationId: string, recipientId: string, recipientName: string) => void;

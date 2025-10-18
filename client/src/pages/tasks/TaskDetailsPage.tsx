@@ -1,26 +1,24 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/authContext.tsx';
-import { getTaskById, assignTask, completeTask, getTaskPaymentDetails, cancelTask, markTaskAsCompletedByProvider } from '../services/taskServices.ts';
-import { getBidsForTask } from '../services/bidServices.ts';
+import { useParams} from 'react-router-dom';
+import { useAuth } from '../../context/authContext.tsx';
+import { getTaskById, assignTask, completeTask, getTaskPaymentDetails, cancelTask, markTaskAsCompletedByProvider } from '@/services/taskServices.ts';
+import { getBidsForTask } from '@/services/bidServices.ts';
 import toast from 'react-hot-toast';
-import Navbar from '../components/layout/Navbar.tsx';
-import Footer from '../components/layout/Footer.tsx';
-import MapView from '../components/map/MapView.tsx';
-import PlaceBidForm from '../components/bids/PlaceBidsForm.tsx';
-import ChatWindow from '../components/chat/ChatWindow.tsx';
-import SubmitReviewModal from '../components/reviews/SubmitReviewmodal.tsx';
-import PaymentModal from '../components/payment/PaymentModal.tsx';
-import PaymentMethodModal from '../components/payment/PaymentMethodModal.tsx';
-import type { AuthUser, Bid, Task } from '../types/index.ts';
-import { useNotifications } from '../context/notificationContext.tsx';
+
+import MapView from '@/components/map/MapView.tsx';
+import PlaceBidForm from '@/components/bids/PlaceBidsForm.tsx';
+import ChatWindow from '@/components/chat/ChatWindow.tsx';
+import SubmitReviewModal from '@/components/reviews/SubmitReviewmodal.tsx';
+import PaymentModal from '@/components/payment/PaymentModal.tsx';
+import PaymentMethodModal from '@/components/payment/PaymentMethodModal.tsx';
+import type { AuthUser, Bid, Task } from '@/types/index.ts';
+import { useNotifications } from '../../context/notificationContext.tsx';
 import { FaStar } from 'react-icons/fa';
-import LoadingSpinner from '../components/layout/LoadingSpinner.tsx';
+import LoadingSpinner from '@/components/layout/LoadingSpinner.tsx';
 
 const TaskDetailsPage = () => {
     const { taskId } = useParams<{ taskId: string }>();
     const { user, updateUser } = useAuth();
-    const navigate = useNavigate();
     const [task, setTask] = useState<Task | null>(null);
     const [bids, setBids] = useState<Bid[]>([]);
     const [loading, setLoading] = useState(true);

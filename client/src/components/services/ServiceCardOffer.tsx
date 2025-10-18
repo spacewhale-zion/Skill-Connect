@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Service } from '../../types';
+import { Service } from '@/types';
 import { FaStar } from 'react-icons/fa';
 
 interface ServiceCardProps {

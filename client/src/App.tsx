@@ -2,33 +2,33 @@ import { Routes, Route } from 'react-router-dom';
 import { useState } from 'react';
 
 // Page & Layout Imports
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
 import HomePage from './pages/HomePage';
-import DashboardLayout from './pages/DashboardLayout';
-import TaskDetailsPage from './pages/TaskDetailsPage';
-import ProfilePage from './pages/ProfilePage';
-import FindTasksPage from './pages/FindTaskPage';
-import NotificationsPage from './pages/NotificationPage';
-import FindServicesPage from './pages/FindServicePage';
-import ServiceDetailsPage from './pages/ServiceDetailsPage';
-import AllMyPostedTasksPage from './pages/AllmytPostedtask';
-import AllMyAssignedTasksPage from './pages/AllmyAssignedtask';
-import AllMyServicesPage from './pages/AllmyServicePage';
-import AllMyBookedServicesPage from './pages/AllBookedServices';
-import AllMyTasksPage from './pages/Allmytaskpage';
-import Navbar from './components/layout/Navbar';
-import Footer from './components/layout/Footer';
+import DashboardLayout from './pages/dashboard/DashboardLayout';
+import TaskDetailsPage from './pages/tasks/TaskDetailsPage';
+import ProfilePage from './pages/dashboard/ProfilePage';
+import FindTasksPage from './pages/tasks/FindTaskPage';
+import NotificationsPage from './pages/notifications/NotificationsPage';
+import FindServicesPage from './pages/services/FindServicePage';
+import ServiceDetailsPage from './pages/services/ServiceDetailsPage';
+import AllMyPostedTasksPage from './pages/tasks/my-tasks/MyPostedTasksPage';
+import AllMyAssignedTasksPage from './pages/tasks/my-tasks/MyAssignedTasksPage';
+import AllMyServicesPage from './pages/services/my-services/MyOfferedServicesPage';
+import AllMyBookedServicesPage from './pages/services/my-services/MyBookedServicesPage';
+import AllMyTasksPage from './pages/tasks/my-tasks/AllMyTasksPage';
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
 
 // Component Imports
-import NotificationPermissionHandler from './components/notifications/NotificationHandler';
-import ChatWindow from './components/chat/ChatWindow';
-import ProtectedRoute from './components/auth/ProtectedRoute'; // <-- 1. Import ProtectedRoute
+import NotificationPermissionHandler from '@/components/notifications/NotificationHandler';
+import ChatWindow from '@/components/chat/ChatWindow';
+import ProtectedRoute from '@/components/auth/ProtectedRoute'; // <-- 1. Import ProtectedRoute
 
 // Type and Hook Imports
-import type { AuthUser } from './types';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
+import type { AuthUser } from '@/types';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 
 function App() {
   const [chatWindowData, setChatWindowData] = useState<{

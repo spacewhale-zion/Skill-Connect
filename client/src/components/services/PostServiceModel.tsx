@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/authContext';
-import { createService, ServiceCreationData } from '../../services/serviceServices';
+import { createService, ServiceCreationData } from '@/services/serviceServices';
 
 interface PostServiceModalProps {
   isOpen: boolean;

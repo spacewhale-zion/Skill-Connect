@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { placeBid } from '../../services/bidServices';
+import { placeBid } from '@/services/bidServices';
 import toast from 'react-hot-toast';
 
 interface PlaceBidFormProps {

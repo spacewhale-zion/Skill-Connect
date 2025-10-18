@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { resetPassword } from '../services/authServices';
+import { resetPassword } from '@/services/authServices';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/authContext';
+import { useAuth } from '../../context/authContext';
 
 const ResetPasswordPage = () => {
   const { token } = useParams<{ token: string }>();

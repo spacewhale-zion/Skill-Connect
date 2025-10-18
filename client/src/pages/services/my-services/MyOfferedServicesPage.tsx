@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { getMyOfferedServices, deleteService } from '../services/serviceServices';
-import ServiceCard from '../components/services/ServiceCardDashBoard';
+import { getMyOfferedServices, deleteService } from '@/services/serviceServices';
+import ServiceCard from '@/components/services/ServiceCardDashBoard';
 import toast from 'react-hot-toast';
-import type { Service } from '../types/index';
+import type { Service } from '@/types/index';
 import { FaTrash } from 'react-icons/fa';
-import LoadingSpinner from '../components/layout/LoadingSpinner';
+import LoadingSpinner from '@/components/layout/LoadingSpinner';
 
 const AllMyServicesPage = () => {
   const [services, setServices] = useState<Service[]>([]);

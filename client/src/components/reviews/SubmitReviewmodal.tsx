@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { createReview } from '../../services/ReviewService';
-import { AuthUser } from '../../types';
+import { createReview } from '@/services/ReviewService';
+import { AuthUser } from '@/types';
 
 interface SubmitReviewModalProps {
   isOpen: boolean;
