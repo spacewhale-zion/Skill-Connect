@@ -187,7 +187,6 @@ Create the following `.env` files and populate them with the values obtained abo
 
 ## 📸 Screenshots
 
-*(Add screenshots of your application here)*
 
 Example:
 
@@ -207,7 +206,3 @@ _User dashboard overview._
 Contributions are welcome! Please follow standard fork-and-pull-request workflows. Ensure code follows existing style patterns and includes tests where appropriate.
 
 ---
-
-## 📄 License
-
-(Optional: Add your license information here, e.g., MIT License)
