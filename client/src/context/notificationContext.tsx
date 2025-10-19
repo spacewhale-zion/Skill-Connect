@@ -26,7 +26,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (user && !socket) {
-      const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const SERVER_URL = import.meta.env.VITE_API_BaseURL ;
       const newSocket = io(SERVER_URL, { auth: { token: user.token } });
       setSocket(newSocket);
     }
