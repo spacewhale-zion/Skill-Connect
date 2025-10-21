@@ -120,26 +120,29 @@ const RegisterPage = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      await register({
-        name,
-        email,
-        password,
-        location: {
-          coordinates: [parseFloat(longitude), parseFloat(latitude)],
-        },
-        fcmToken: fcmToken || undefined,
-      });
-      toast.success('Registration successful!');
-      navigate('/dashboard');
-    } catch (error) {
-      toast.error('Registration failed. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            // The register function now just sends the request
+            const response = await register({ // Assuming register service returns { message, email }
+                name,
+                email,
+                password,
+                location: {
+                    coordinates: [parseFloat(longitude), parseFloat(latitude)],
+                },
+                fcmToken: fcmToken || undefined,
+            });
+            console.log(response);
+            toast.success(response.message || 'Registration request sent! Check your email.');
+            // Navigate to the verification page, passing the email
+            navigate('/verify-email', { state: { email: email } });
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Registration failed. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
   const inputStyles = "w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition";
 

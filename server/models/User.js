@@ -14,9 +14,19 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
     },
+    emailVerificationCode: String,
+    emailVerificationExpires: Date,
+    isEmailVerified: {
+       type: Boolean,
+       default: false,
+    },
     password: {
       type: String,
       required: true,
+    },
+    isSuspended: {
+      type: Boolean,
+      default: false,
     },
     bio:{
       type:String,
@@ -49,6 +59,11 @@ const userSchema = new mongoose.Schema(
        portfolio: { // <-- NEW: For Portfolio images
       type: [String],
       default: [],
+    },
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user',
     },
     isVerified: { // <-- NEW: For Verification Badge
       type: Boolean,
@@ -87,6 +102,20 @@ userSchema.pre('save', async function (next) {
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
+
+userSchema.methods.createEmailVerificationCode = function () {
+  // Generate a simple 6-digit code
+  const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // Store the hashed code (optional, but more secure if needed later for lookup)
+  // For simplicity here, storing the plain code. Consider hashing in production.
+  this.emailVerificationCode = verificationCode; // In production, hash this: crypto.createHash('sha256').update(verificationCode).digest('hex');
+
+  // Set code to expire in 10 minutes
+  this.emailVerificationExpires = Date.now() + 10 * 60 * 1000;
+
+  return verificationCode; // Return the plain code to be emailed
+};
 
 // --- Add this new method to the User schema ---
 userSchema.methods.createPasswordResetToken = function () {

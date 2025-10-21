@@ -19,6 +19,7 @@ import AllMyBookedServicesPage from './pages/services/my-services/MyBookedServic
 import AllMyTasksPage from './pages/tasks/my-tasks/AllMyTasksPage';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import VerifyEmailPage from './pages/auth/VerifyEmailPage';
 
 // Component Imports
 import NotificationPermissionHandler from '@/components/notifications/NotificationHandler';
@@ -61,6 +62,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/tasks" element={<FindTasksPage />} />
         <Route path="/services" element={<FindServicesPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage/>} />
         

@@ -6,6 +6,7 @@ import payment from './Payment.js'
 import chatRoutes from './chat.js'
 import notificationRoutes from "./notification.js"
 import serviceRoutes from './services.js';
+import admin from './admin.js'; 
 
 
 const router = express.Router();
@@ -18,5 +19,6 @@ router.use('/payment',payment);
 router.use('/chats', chatRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/services', serviceRoutes);
+router.use('/admin', admin);
 
 export default router;

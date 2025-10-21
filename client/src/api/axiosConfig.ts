@@ -4,7 +4,7 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BaseURL,
 });
-console.log(import.meta.env.BASE_URL)
+console.log(import.meta.env.VITE_API_BaseURL)
 // This interceptor adds the auth token to every request if it exists
 api.interceptors.request.use(
   (config) => {

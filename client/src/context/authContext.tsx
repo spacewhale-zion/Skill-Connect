@@ -1,17 +1,19 @@
-// src/context/AuthContext.tsx
-import  { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { loginUser, registerUser } from '@/services/authServices';
+// src/context/authContext.tsx
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { loginUser, registerUser, getMyProfile } from '@/services/authServices'; // Keep getMyProfile
 import { AuthUser, UserCredentials, UserRegistrationData } from '@/types';
-import api from '../api/axiosConfig';
-import { getMyProfile } from '@/services/authServices';
+// Remove registerUser from direct context usage if verifyEmail handles the final login
 
 interface AuthContextType {
   user: AuthUser | null;
   login: (credentials: UserCredentials) => Promise<void>;
-  register: (userData: UserRegistrationData) => Promise<void>;
+  // register function might just initiate now, not log in
+  register: (userData: UserRegistrationData) => Promise<{ message: string, email: string }>;
   logout: () => void;
-  updateUser: (newUserData: Partial<AuthUser>) => void; // For profile updates
+  updateUser: (newUserData: Partial<AuthUser>) => void;
   isLoading: boolean;
+  // Add a function to handle login after successful verification
+  loginAfterVerification: (userData: AuthUser) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,75 +22,83 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-   useEffect(() => {
-    const loadUser = async () => {
-      const storedUserString = localStorage.getItem('user');
-      if (storedUserString) {
-        try {
-          // Re-fetch the user's profile to get the latest data
-          const freshUser = await getMyProfile();
-          setUser(freshUser);
-          localStorage.setItem('user', JSON.stringify(freshUser));
-        } catch (error) {
-          console.error("Session expired or invalid, logging out.", error);
-          // If the token is invalid or expired, log the user out
-          logout();
-        }
+  useEffect(() => {
+      const loadUser = async () => {
+          const storedUserString = localStorage.getItem('user');
+          if (storedUserString) {
+              try {
+                  // Check token validity by fetching profile
+                  const freshUser = await getMyProfile();
+                   // Check if the user loaded from storage/API is actually verified
+                  if (!freshUser.isEmailVerified) {
+                       console.warn("User loaded but email not verified. Logging out.");
+                       logout(); // Log out if email isn't verified
+                       setIsLoading(false);
+                       return;
+                  }
+                  setUser(freshUser);
+                  // Update storage only if fetched data differs significantly or on login/update
+                  localStorage.setItem('user', JSON.stringify(freshUser));
+              } catch (error) {
+                  console.error("Session invalid, logging out.", error);
+                  logout(); // Token likely invalid/expired
+              }
+          }
+          setIsLoading(false);
+      };
+      loadUser();
+  }, []); // Empty dependency array means this runs once on mount
+
+
+  // Helper to set user state and localStorage
+  const setUserAndStorage = (userData: AuthUser | null) => {
+      setUser(userData);
+      if (userData) {
+          localStorage.setItem('user', JSON.stringify(userData));
+      } else {
+          localStorage.removeItem('user');
       }
-      setIsLoading(false);
-    };
+  };
 
-    loadUser();
-  }, []);
+  const login = async (credentials: UserCredentials) => {
+      const userData = await loginUser(credentials);
+      // Login service already checks for verification on the backend
+      setUserAndStorage(userData);
+  };
 
-  const handleAuth = async (authPromise: Promise<AuthUser>) => {
-    const userData = await authPromise;
-    localStorage.setItem('user', JSON.stringify(userData));
-    // The axios interceptor will handle setting the header from now on
-    setUser(userData);
+  // Register now just calls the service, doesn't set user state
+  const register = async (userData: UserRegistrationData): Promise<{ message: string, email: string }> => {
+      // It doesn't log the user in, just starts the process
+      return await registerUser(userData);
+  };
+
+  // New function called by VerifyEmailPage after successful code submission
+  const loginAfterVerification = (userData: AuthUser) => {
+      setUserAndStorage(userData);
+  };
+
+
+  const logout = () => {
+      setUserAndStorage(null);
   };
 
   const updateUser = (newUserData: Partial<AuthUser>) => {
-    // Use the functional form of setState to get the most recent state
     setUser(currentUser => {
-      // If for some reason there's no user, do nothing.
       if (!currentUser) return null;
-
-      // Create the new user object by merging old data with new data
       const updatedUser = { ...currentUser, ...newUserData };
-
-      // Update localStorage with the fully merged object
       localStorage.setItem('user', JSON.stringify(updatedUser));
-      
-      // Return the new state
       return updatedUser;
     });
   };
 
-  const login = async (credentials: UserCredentials) => {
-    await handleAuth(loginUser(credentials));
-  };
-
-  const register = async (userData: UserRegistrationData) => {
-    await handleAuth(registerUser(userData));
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    // The axios interceptor will see no user and won't add the header
-  };
-
-  
-
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateUser, isLoading }}>
-      {/* We render children even while loading to prevent flashes of unstyled content */}
-      {children} 
+    <AuthContext.Provider value={{ user, login, register, logout, updateUser, isLoading, loginAfterVerification }}>
+      {children}
     </AuthContext.Provider>
   );
 };
 
+// useAuth hook remains the same
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

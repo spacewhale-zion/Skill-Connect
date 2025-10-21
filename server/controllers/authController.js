@@ -1,6 +1,8 @@
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import asyncHandler from 'express-async-handler';
+import { sendEmail } from '../services/emailService.js';
+import crypto from 'crypto';
 
 // Helper function to generate a JWT
 const generateToken = (id) => {
@@ -9,58 +11,118 @@ const generateToken = (id) => {
   });
 };
 
-/**
- * @desc    Register a new user
- * @route   POST /api/auth/register
- * @access  Public
- */
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, location, skills, fcmToken } = req.body; // Add fcmToken here
+  const { name, email, password, location, skills, fcmToken } = req.body;
 
-  // Basic validation
   if (!name || !email || !password || !location || !location.coordinates) {
     res.status(400);
     throw new Error('Please provide all required fields');
   }
 
-  // Check if user already exists
   const userExists = await User.findOne({ email });
-
   if (userExists) {
+    // If user exists but is not verified, maybe resend code? For now, just error.
+    if (!userExists.isEmailVerified) {
+         res.status(400);
+         throw new Error('Email already registered but not verified. Check your email or try verifying again.');
+    }
     res.status(400);
     throw new Error('User with this email already exists');
   }
 
-  // Create the new user in the database
-  const user = await User.create({
+  // Create user but don't log them in yet
+  const user = new User({ // Use new User() instead of User.create() to call instance method
     name,
     email,
-    password, // Password will be hashed by the pre-save middleware in the User model
+    password,
     skills,
     location: {
       type: 'Point',
-      coordinates: location.coordinates, // Expecting [longitude, latitude]
+      coordinates: location.coordinates,
     },
-    fcmToken, // Save the token to the new user document
+    fcmToken,
+    isEmailVerified: false, // Explicitly set to false
   });
 
-  if (user) {
-   res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      skills: user.skills,
-      location: user.location,
-      bio: user.bio,
-      averageRating: user.averageRating,
-      profilePicture: user.profilePicture,
-      token: generateToken(user._id),
+  // Generate verification code
+  const verificationCode = user.createEmailVerificationCode();
+  await user.save(); // Save user with the code and expiry
+
+  // Send verification email
+  const verificationURL = `${process.env.CLIENT_URL}/verify-email`; // Or a page that takes the code
+  const message = `Welcome to SkillConnect!\n\nYour verification code is: ${verificationCode}\n\nThis code will expire in 10 minutes.\n\nYou can enter the code here: ${verificationURL}\n\nIf you didn't create this account, please ignore this email.`;
+
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: 'SkillConnect - Verify Your Email Address',
+      text: message,
     });
-  } else {
-    res.status(400);
-    throw new Error('Invalid user data');
+
+    res.status(201).json({
+      message: 'Registration successful! Please check your email for a verification code.',
+      // Optionally send back email to prefill verification form
+      email: user.email
+    });
+  } catch (err) {
+    // Important: If email fails, we should ideally roll back user creation or mark them differently.
+    // For simplicity, we'll clear the code fields and let the user try registering again.
+    user.emailVerificationCode = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    console.error("EMAIL SENDING ERROR: ", err);
+    res.status(500);
+    throw new Error('User registered, but failed to send verification email. Please try registering again.');
   }
 });
+
+/**
+ * @desc    Verify user email with code
+ * @route   POST /api/auth/verify-email
+ * @access  Public
+ */
+const verifyEmail = asyncHandler(async (req, res) => {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+        res.status(400);
+        throw new Error('Please provide email and verification code.');
+    }
+
+    // Find user by email who has a verification code and it hasn't expired
+    const user = await User.findOne({
+        email: email,
+        emailVerificationCode: code, // In production, compare hashed code: crypto.createHash('sha256').update(code).digest('hex'),
+        emailVerificationExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+        res.status(400);
+        throw new Error('Invalid or expired verification code.');
+    }
+
+    // Mark user as verified and clear verification fields
+    user.isEmailVerified = true;
+    user.emailVerificationCode = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+
+    // Verification successful, log the user in
+    res.status(200).json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        skills: user.skills,
+        location: user.location,
+        bio: user.bio,
+        averageRating: user.averageRating,
+        profilePicture: user.profilePicture,
+        token: generateToken(user._id),
+        message: 'Email verified successfully! You are now logged in.'
+    });
+});
+
 
 /**
  * @desc    Authenticate user & get token
@@ -69,13 +131,17 @@ const registerUser = asyncHandler(async (req, res) => {
  */
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-
-  // Find user by email
   const user = await User.findOne({ email });
 
-  // Check if user exists and password matches
+  // **Check if email is verified**
+  if (user && !user.isEmailVerified) {
+    res.status(401);
+    // Optionally: Resend verification email logic could go here
+    throw new Error('Email not verified. Please check your email for the verification code.');
+  }
+
   if (user && (await user.matchPassword(password))) {
-   res.status(201).json({
+    res.status(201).json({ // Changed to 201 to match register response style
       _id: user._id,
       name: user.name,
       email: user.email,
@@ -204,4 +270,4 @@ const resetPassword = asyncHandler(async (req, res) => {
   });
 });
 
-export { registerUser, loginUser, getUserProfile ,forgotPassword, resetPassword };
+export { registerUser, loginUser, getUserProfile ,forgotPassword, resetPassword ,verifyEmail};

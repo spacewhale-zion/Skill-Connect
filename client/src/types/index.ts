@@ -18,6 +18,7 @@ export interface AuthUser {
   token: string;
    portfolio?: string[]; // <-- Add this
   isVerified?: boolean;
+  isEmailVerified:boolean;
 }
 
 // Data needed for user registration

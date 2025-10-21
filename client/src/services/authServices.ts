@@ -15,6 +15,11 @@ export const registerUser = async (userData: UserRegistrationData) => {
 };
 
 
+export const verifyEmailService = async (email: string, code: string): Promise<AuthUser> => {
+  const response = await api.post('/auth/verify-email', { email, code });
+  return response.data; // Expecting the full logged-in user data + token
+};
+
 
 export const getMyProfile = async (): Promise<AuthUser> => {
   const { data } = await api.get('/auth/me');
