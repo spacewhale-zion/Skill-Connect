@@ -133,7 +133,11 @@ const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
 
-  // **Check if email is verified**
+  if (user && user.isSuspended) {
+    res.status(403); // Forbidden status code
+    throw new Error('Your account has been suspended. Please contact support.');
+  }
+
   if (user && !user.isEmailVerified) {
     res.status(401);
     // Optionally: Resend verification email logic could go here
@@ -148,9 +152,11 @@ const loginUser = asyncHandler(async (req, res) => {
       skills: user.skills,
       location: user.location,
       bio: user.bio,
+      role:user.role,
       averageRating: user.averageRating,
       profilePicture: user.profilePicture,
       token: generateToken(user._id),
+      isEmailVerified:user.isEmailVerified
     });
   } else {
     res.status(401);
@@ -175,9 +181,11 @@ const getUserProfile = asyncHandler(async (req, res) => {
       skills: user.skills,
       location: user.location,
       bio: user.bio,
+      role: user.role,
       averageRating: user.averageRating,
       profilePicture: user.profilePicture,
       token: generateToken(user._id),
+      isEmailVerified: user.isEmailVerified,
     });
   } else {
     res.status(404);
@@ -199,7 +207,12 @@ const forgotPassword = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('There is no user with that email address.');
   }
-
+    if (user.isSuspended) {
+      return res.status(200).json({
+          status: 'success',
+          message: 'If an account with that email exists, a token has been sent.' // Still generic
+      });
+  }
   // Generate the random reset token
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });

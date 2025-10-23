@@ -2,11 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/authContext';
 import toast from 'react-hot-toast';
 import { useNavigate, Link } from 'react-router-dom';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import * as THREE from "three";
+import axios from 'axios';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -115,7 +118,22 @@ const LoginPage = () => {
       toast.success('Logged in successfully!');
       navigate('/dashboard');
     } catch (error) {
-      toast.error('Failed to log in. Please check your credentials.');
+      // --- START SUSPENSION HANDLING ---
+      if (axios.isAxiosError(error) && error.response?.status === 403) {
+        if (error.response?.data?.message?.includes('suspended')) {
+            navigate('/suspended'); 
+            toast.error('Your account is suspended.');
+        } else {
+             toast.error(error.response?.data?.message || 'Access denied.');
+        }
+      } else if (axios.isAxiosError(error) && error.response?.status === 401) {
+          toast.error(error.response?.data?.message || 'Invalid credentials or email not verified.');
+      }
+      else {
+        // Generic error
+        toast.error('Failed to log in. Please check your credentials or network.');
+        console.error("Login error:", error);
+      }
     }
   };
 
@@ -140,9 +158,27 @@ const LoginPage = () => {
             <label htmlFor="email" className="block text-sm font-medium text-slate-300">Email</label>
             <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={`mt-1 ${inputStyles}`} placeholder="you@example.com" />
           </div>
-          <div>
+        <div>
             <label htmlFor="password" className="block text-sm font-medium text-slate-300">Password</label>
-            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className={`mt-1 ${inputStyles}`} placeholder="••••••••" />
+            <div className="relative mt-1"> {/* Added relative positioning */}
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'} // Change type based on state
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className={`${inputStyles} pr-10`} // Added padding-right for icon
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)} // Toggle state on click
+                className="absolute inset-y-0 right-0 px-3 flex items-center text-slate-400 hover:text-slate-200"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />} {/* Show appropriate icon */}
+              </button>
+            </div>
           </div>
 
           <div className="text-right text-sm">

@@ -11,6 +11,9 @@ export interface AuthUser {
     type: 'Point';
     coordinates: [number, number]; // [longitude, latitude]
   };
+  role:'user' | 'admin';
+  isAdmin:boolean;
+  isSuspended:boolean;
   profilePicture?: string; // Add this
   averageRating?: number; // Add this
   phone?: string;         // Add this
@@ -19,6 +22,7 @@ export interface AuthUser {
    portfolio?: string[]; // <-- Add this
   isVerified?: boolean;
   isEmailVerified:boolean;
+  createdAt?:string
 }
 
 // Data needed for user registration

@@ -78,6 +78,7 @@ const userSchema = new mongoose.Schema(
       stripeAccountId: { // <-- ADD THIS FIELD
       type: String,
     },
+   
     fcmToken: {
   type: String,
   default: null,

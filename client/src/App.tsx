@@ -20,7 +20,9 @@ import AllMyTasksPage from './pages/tasks/my-tasks/AllMyTasksPage';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import VerifyEmailPage from './pages/auth/VerifyEmailPage';
-
+import AdminPage from './pages/admin/AdminPage';
+import AdminRoute from './components/auth/AdminRoute';
+import SuspendedPage from './pages/auth/SuspendedPage';
 // Component Imports
 import NotificationPermissionHandler from '@/components/notifications/NotificationHandler';
 import ChatWindow from '@/components/chat/ChatWindow';
@@ -65,6 +67,7 @@ function App() {
         <Route path="/verify-email" element={<VerifyEmailPage />} />
          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage/>} />
+        <Route path="/suspended" element={<SuspendedPage />} />
         
         {/* --- Protected Routes --- */}
         {/* Wrap the element of each protected route with the ProtectedRoute component */}
@@ -115,6 +118,13 @@ function App() {
           path="/my-all-tasks"
           element={<ProtectedRoute><AllMyTasksPage /></ProtectedRoute>}
         />
+
+        {/* --- Protected Admin Route --- */}
+        <Route
+          path="/admin"
+          element={<AdminRoute><AdminPage /></AdminRoute>} // Use AdminRoute
+        />
+
       </Routes>
 
       <Footer />

@@ -1,17 +1,19 @@
-// spacewhale-zion/skill-connect/Skill-Connect-e87cf6223cbd3887670780f5036f493f8ada8812/client/src/components/layout/Navbar.tsx
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/authContext';
 import { useNotifications } from '../../context/notificationContext';
-import { FaBell, FaBars, FaTimes } from 'react-icons/fa';
+import { FaBell, FaBars, FaTimes, FaUserShield } from 'react-icons/fa'; // Added FaUserShield
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
+  // Get user, logout function, AND isAdmin flag from useAuth
+  const { user, logout, isAdmin } = useAuth();
   const { unreadCount } = useNotifications();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Consistent link styling for reuse
   const linkClasses = "py-2 px-3 rounded-md hover:bg-slate-700 transition-colors duration-300";
+  // Specific style for the admin button
+  const adminLinkClasses = "py-2 px-3 rounded-md bg-indigo-600 hover:bg-indigo-700 transition-colors duration-300 flex items-center gap-1 text-sm font-semibold";
 
   const navLinks = (
     <>
@@ -27,7 +29,7 @@ const Navbar = () => {
           Skill<span className="text-yellow-400">Connect</span>
         </Link>
 
-        {/* Desktop Menu */}
+        {/* Desktop Menu - Links */}
         <div className="hidden md:flex items-center space-x-2">
           {navLinks}
         </div>
@@ -36,6 +38,12 @@ const Navbar = () => {
         <div className="flex items-center space-x-4">
           {user ? (
             <>
+              {/* Conditionally render Admin button for desktop */}
+              {isAdmin && (
+                <Link to="/admin" className={`hidden sm:flex ${adminLinkClasses}`}>
+                  <FaUserShield size={14} /> Admin
+                </Link>
+              )}
               <Link to="/notifications" className="relative p-2 rounded-full hover:bg-slate-700 transition-colors">
                 <FaBell size={20} />
                 {unreadCount > 0 && (
@@ -70,7 +78,13 @@ const Navbar = () => {
              {user && (
                 <>
                     <hr className="border-slate-700 my-2"/>
-                    <Link to="/dashboard" className={linkClasses}>Dashboard</Link>
+                    {/* Conditionally render Admin button for mobile */}
+                    {isAdmin && (
+                         <Link to="/admin" className={adminLinkClasses} onClick={() => setIsMenuOpen(false)}>
+                             <FaUserShield size={14} /> Admin Panel
+                         </Link>
+                    )}
+                    <Link to="/dashboard" className={linkClasses} onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
                     <button onClick={() => { logout(); setIsMenuOpen(false); }} className={`text-left w-full ${linkClasses}`}>Logout</button>
                 </>
              )}
