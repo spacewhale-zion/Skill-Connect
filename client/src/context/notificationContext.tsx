@@ -1,5 +1,5 @@
 // spacewhale-zion/skill-connect/Skill-Connect-7116ae5702cce0b0c74858586a22e6d652228ad1/client/src/context/notificationContext.tsx
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback,useMemo } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './authContext';
 import { fetchNotifications } from '@/services/notificationServices';
@@ -24,17 +24,30 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [socket, setSocket] = useState<Socket | null>(null);
 
-  useEffect(() => {
+  // Inside notificationContext.tsx useEffect
+useEffect(() => {
     if (user && !socket) {
-      const SERVER_URL = import.meta.env.VITE_API_BaseURL ;
-      const newSocket = io(SERVER_URL, { auth: { token: user.token } });
-      setSocket(newSocket);
+      const rawApiUrl = import.meta.env.VITE_API_SocketURL || '';
+     
+      const socketServerUrl = rawApiUrl.replace(/\/api$/, ''); 
+      console.log(`Attempting socket connection to: ${socketServerUrl}`); 
+
+      if (socketServerUrl) {
+          const newSocket = io(socketServerUrl, { auth: { token: user.token } });
+          setSocket(newSocket);
+      } else {
+          console.error("VITE_API_BaseURL is not defined correctly for WebSocket.");
+      }
+
     }
     if (!user && socket) {
       socket.disconnect();
       setSocket(null);
     }
-  }, [user, socket]);
+    return () => {
+        socket?.disconnect();
+    }
+  }, [user]); 
 
   const loadNotifications = useCallback(async () => {
     if (user) {
@@ -64,6 +77,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
 
     if (socket) {
       socket.on('new_notification', (newNotification: Notification) => {
+        console.log('Received new_notification event:', newNotification);
         if (newNotification.title !== 'New Chat Message') {
            toast.success(`New notification: ${newNotification.title}`);
         }
@@ -77,8 +91,26 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [socket, loadNotifications]);
 
+  const contextValue = useMemo(() => ({
+    notifications,
+    unreadCount,
+    setNotifications,
+    decrementUnreadCount,
+    incrementUnreadCount,
+    clearUnreadCount,
+    socket
+  }), [
+    notifications,
+    unreadCount,
+    setNotifications, // Note: setNotifications has stable identity from useState
+    decrementUnreadCount,
+    incrementUnreadCount,
+    clearUnreadCount,
+    socket
+  ]);
+
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, setNotifications, decrementUnreadCount, incrementUnreadCount, clearUnreadCount, socket }}>
+    <NotificationContext.Provider value={ contextValue }>
       {children}
     </NotificationContext.Provider>
   );

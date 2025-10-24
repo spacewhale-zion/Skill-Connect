@@ -139,12 +139,14 @@ export interface Task {
     profilePicture?: string;
     averageRating?: number;
   };
+  paid:boolean;
   assignedProvider?: {
     _id: string;
     name: string;
     profilePicture?: string;
     averageRating?: number;
   };
+  paymentMethod:string
   isInstantBooking?: boolean;      // <-- ADD THIS
   originatingService?: string; 
   createdAt: string;

@@ -13,12 +13,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <AuthProvider>
         <ChatProvider>
-        <NotificationProvider> {/* Wrap the App */}
-          <App />
-          <Toaster position="top-center" />
-        </NotificationProvider>
-          </ChatProvider>
-
+          {/* NotificationProvider wraps App, so Navbar inside App has access */}
+          <NotificationProvider>
+            <App />
+            <Toaster position="top-center" />
+          </NotificationProvider>
+        </ChatProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

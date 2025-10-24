@@ -77,19 +77,31 @@ const PaymentModal = ({ isOpen, onClose, clientSecret, onPaymentSuccess }: Payme
     },
   };
 
-  return (
-    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex justify-center items-center p-4">
-      <div className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-8 w-full max-w-md">
-        <h2 className="text-2xl font-bold text-white mb-6">Confirm Payment</h2>
-        <Elements stripe={stripePromise} options={options}>
-          <CheckoutForm onSuccessfulPayment={onPaymentSuccess} />
-        </Elements>
-        <button onClick={onClose} className="w-full mt-4 py-2 text-sm text-slate-400 hover:underline">
-          Cancel
-        </button>
-      </div>
+ return (
+  <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex justify-center items-center p-4 overflow-y-auto">
+    <div className="relative bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-8 w-full max-w-md my-8">
+      {/* Close (X) Button */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl"
+        aria-label="Close modal"
+      >
+        ✕
+      </button>
+
+      <h2 className="text-2xl font-bold text-white mb-6 text-center">Confirm Payment</h2>
+
+      <Elements stripe={stripePromise} options={options}>
+        <CheckoutForm onSuccessfulPayment={onPaymentSuccess} />
+      </Elements>
+
+      <button onClick={onClose} className="w-full mt-4 py-2 text-sm text-slate-400 hover:underline">
+        Cancel
+      </button>
     </div>
-  );
+  </div>
+);
+
 };
 
 export default PaymentModal;

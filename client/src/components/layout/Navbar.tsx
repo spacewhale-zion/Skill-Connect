@@ -9,6 +9,8 @@ const Navbar = () => {
   const { user, logout, isAdmin } = useAuth();
   const { unreadCount } = useNotifications();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  console.log('Navbar render, unreadCount:', unreadCount);
+
 
   // Consistent link styling for reuse
   const linkClasses = "py-2 px-3 rounded-md hover:bg-slate-700 transition-colors duration-300";
