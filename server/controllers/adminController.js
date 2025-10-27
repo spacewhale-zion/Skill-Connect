@@ -136,6 +136,47 @@ const getAllServices = asyncHandler(async (req, res) => {
 });
 
 
+/**
+ * @desc    Promote a user to admin
+ * @route   PUT /api/admin/users/:id/make-admin
+ * @access  Private/Admin
+ */
+const makeAdmin = asyncHandler(async (req, res) => {
+  const userToPromote = await User.findById(req.params.id);
+
+  if (!userToPromote) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  // Prevent admin from changing their own role via this endpoint
+  if (userToPromote._id.toString() === req.user._id.toString()) {
+    res.status(400);
+    throw new Error('Cannot change your own admin status.');
+  }
+
+  if (userToPromote.role === 'admin') {
+    res.status(400);
+    throw new Error('User is already an admin.');
+  }
+
+  userToPromote.role = 'admin';
+  const updatedUser = await userToPromote.save();
+
+  res.json({
+    message: `User ${updatedUser.name} has been promoted to admin.`,
+    user: { // Return limited info
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      isSuspended: updatedUser.isSuspended,
+      createdAt: updatedUser.createdAt,
+      profilePicture: updatedUser.profilePicture,
+    },
+  });
+});
+
 export {
   getAllUsers,
   suspendUser,
@@ -143,5 +184,6 @@ export {
   deleteService,
   getAllTasks,   // <-- Export new function
   getAllServices, // <-- Export new function
-  getAdminStats
+  getAdminStats,
+  makeAdmin
 };

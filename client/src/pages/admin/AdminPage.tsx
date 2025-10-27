@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
     getAllUsers,
     toggleUserSuspension,
@@ -7,18 +7,20 @@ import {
     getAllTasksAsAdmin,
     getAllServicesAsAdmin,
     getAdminStatsData,
-    AdminStats
+    AdminStats,
+    makeUserAdmin
 } from '@/services/adminServices';
 import toast from 'react-hot-toast';
 import type { AuthUser, Task, Service } from '@/types';
 import LoadingSpinner from '@/components/layout/LoadingSpinner';
-import AdminOverviewTab from '@/components/admin/AdminOverviewTab'; // Import new components
-import AdminTasksTab  from '@/components/admin/AdminTasksTab';
+import AdminOverviewTab from '@/components/admin/AdminOverviewTab';
+import AdminTasksTab from '@/components/admin/AdminTasksTab';
 import AdminUsersTab from '@/components/admin/AdminUsersTab';
 import AdminServicesTab from '@/components/admin/AdminServicesTab';
 import AdminDeleteConfirmationModal from '@/components/admin/AdminDeleteConfirmationModal';
+import AdminConfirmationModal from '@/components/admin/AdminConfirmationModal';
 
-// Helper to format dates consistently (Keep this here or move to a utils file)
+// Helper to format dates consistently
 const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     try {
@@ -28,11 +30,22 @@ const formatDate = (dateString?: string) => {
     }
 };
 
-// Define type for item to delete (Keep this here or move to types)
+// Types for modals
 type DeletionTarget = {
     id: string;
     title: string;
     type: 'task' | 'service';
+} | null;
+
+type MakeAdminTarget = {
+    id: string;
+    name: string;
+} | null;
+
+type SuspendUserTarget = {
+    id: string;
+    name: string;
+    isSuspended: boolean;
 } | null;
 
 const AdminPage = () => {
@@ -43,60 +56,25 @@ const AdminPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'tasks' | 'services'>('overview');
 
-    // State for confirmation modal
+    // DELETE modal
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<DeletionTarget>(null);
 
-    // State for search terms
+    // MAKE ADMIN modal
+    const [showMakeAdminModal, setShowMakeAdminModal] = useState(false);
+    const [userToMakeAdmin, setUserToMakeAdmin] = useState<MakeAdminTarget>(null);
+
+    // SUSPEND modal
+    const [showSuspendModal, setShowSuspendModal] = useState(false);
+    const [userToSuspend, setUserToSuspend] = useState<SuspendUserTarget>(null);
+
+    // Search states
     const [userSearchTerm, setUserSearchTerm] = useState('');
     const [taskSearchTerm, setTaskSearchTerm] = useState('');
     const [serviceSearchTerm, setServiceSearchTerm] = useState('');
 
-    console.log(tasks);
-    // --- NEW: Memoize revenue data generation ---
-const monthlyRevenueData = useMemo(() => {
-    if (!tasks || tasks.length === 0) return [];
-
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const currentYear = new Date().getFullYear();
-
-    const monthlyRevenue: Record<string, number> = {};
-    monthNames.forEach(month => {
-        monthlyRevenue[month] = 0;
-    });
-
-    tasks.forEach(task => {
-        if (task.status === 'Completed' && task.paymentMethod === 'Stripe' && task.paid==true ) {
-            try {
-                console.log("Task",task);
-                const completionDate = new Date(task.completedAt);
-                if (completionDate.getFullYear() === currentYear) {
-                    const monthIndex = completionDate.getMonth();
-                    const monthName = monthNames[monthIndex];
-                     if (monthName && typeof task.acceptedBidAmount === 'number') {
-                        const fee = task.acceptedBidAmount * 0.10;
-                        monthlyRevenue[monthName] += fee;
-                    }
-                }
-            } catch (e) {
-                console.warn(`Could not parse completion date for task ${task._id}: ${task.completedAt}`);
-            }
-        }
-    });
-
-    const currentMonthIndex = new Date().getMonth();
-    const chartData = [];
-    for (let i = 0; i <= currentMonthIndex; i++) {
-         const monthName = monthNames[i];
-         if (monthName) { 
-            chartData.push({ name: monthName, revenue: parseFloat(monthlyRevenue[monthName].toFixed(2)) });
-        }
-    }
-
-    return chartData;
-}, [tasks]);
-
-    const fetchData = async () => {
+    // --- Data Fetching ---
+    const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
             const [usersData, tasksData, servicesData, statsData] = await Promise.all([
@@ -115,28 +93,54 @@ const monthlyRevenueData = useMemo(() => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [fetchData]);
 
-     const taskStatusData = useMemo(() => {
+    // --- Memoized data for charts and filtering ---
+    const monthlyRevenueData = useMemo(() => {
+        if (!tasks || tasks.length === 0) return [];
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const currentYear = new Date().getFullYear();
+        const monthlyRevenue: Record<string, number> = {};
+        monthNames.forEach(month => { monthlyRevenue[month] = 0; });
+
+        tasks.forEach(task => {
+            const bidAmount = typeof task.acceptedBidAmount === 'number' ? task.acceptedBidAmount : 0;
+            if (task.status === 'Completed' && task.paymentMethod === 'Stripe' && task.completedAt) {
+                try {
+                    const completionDate = new Date(task.completedAt);
+                    if (completionDate.getFullYear() === currentYear) {
+                        const monthIndex = completionDate.getMonth();
+                        const monthName = monthNames[monthIndex];
+                        if (monthName) monthlyRevenue[monthName] += bidAmount * 0.1;
+                    }
+                } catch (e) {
+                    console.warn(`Invalid date for task ${task._id}: ${task.completedAt}`);
+                }
+            }
+        });
+
+        const currentMonthIndex = new Date().getMonth();
+        return monthNames.slice(0, currentMonthIndex + 1).map(month => ({
+            name: month,
+            revenue: parseFloat(monthlyRevenue[month].toFixed(2))
+        }));
+    }, [tasks]);
+
+    const taskStatusData = useMemo(() => {
         if (!tasks) return [];
         const statusCounts = tasks.reduce((acc, task) => {
-             const statusKey = task.status || 'Unknown';
+            const statusKey = task.status || 'Unknown';
             acc[statusKey] = (acc[statusKey] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
-        const allStatuses = ['Open', 'Assigned', 'Pending Payment', 'CompletedByProvider', 'Completed', 'Cancelled'];
-        allStatuses.forEach(status => {
-            if (!statusCounts[status]) {
-                statusCounts[status] = 0;
-            }
+        ['Open', 'Assigned', 'Pending Payment', 'CompletedByProvider', 'Completed', 'Cancelled'].forEach(status => {
+            if (!statusCounts[status]) statusCounts[status] = 0;
         });
-        if(statusCounts['Unknown'] === undefined) {
-             statusCounts['Unknown'] = 0;
-        }
+        if (statusCounts['Unknown'] === undefined) statusCounts['Unknown'] = 0;
         return Object.entries(statusCounts).map(([name, value]) => ({ name, value }));
     }, [tasks]);
 
@@ -151,24 +155,17 @@ const monthlyRevenueData = useMemo(() => {
                 try {
                     const signupDate = new Date(user.createdAt);
                     if (signupDate.getFullYear() === currentYear) {
-                        const monthIndex = signupDate.getMonth();
-                        const monthName = monthNames[monthIndex];
-                         if (monthName) { monthlySignups[monthName]++; }
+                        monthlySignups[monthNames[signupDate.getMonth()]]++;
                     }
-                } catch (e) {
-                    console.warn(`Could not parse date for user ${user._id}: ${user.createdAt}`);
-                }
+                } catch {}
             }
         });
         const currentMonthIndex = new Date().getMonth();
-        const chartData = [];
-        for (let i = 0; i <= currentMonthIndex; i++) {
-            const monthName = monthNames[i];
-             if (monthName) { chartData.push({ name: monthName, users: monthlySignups[monthName] }); }
-        }
-        return chartData;
+        return monthNames.slice(0, currentMonthIndex + 1).map(month => ({
+            name: month,
+            users: monthlySignups[month]
+        }));
     }, [users]);
-
 
     const filteredUsers = useMemo(() => {
         if (!userSearchTerm) return users;
@@ -201,25 +198,60 @@ const monthlyRevenueData = useMemo(() => {
         );
     }, [services, serviceSearchTerm]);
 
-    const handleToggleSuspend = async (userId: string) => {
-        const user = users.find(u => u._id === userId);
-        if (!user) return;
-        const action = user.isSuspended ? 'unsuspend' : 'suspend';
-        if (window.confirm(`Are you sure you want to ${action} ${user.name}?`)) {
-            try {
-                const result = await toggleUserSuspension(userId);
-                toast.success(result.message);
-                // Update local state instead of re-fetching
-                setUsers(prevUsers =>
-                    prevUsers.map(u =>
-                        u._id === userId ? { ...u, isSuspended: !u.isSuspended } : u
-                    )
-                );
-            } catch (error: any) {
-                toast.error(error?.response?.data?.message || `Failed to ${action} user.`);
-                console.error(error);
-            }
+    // --- Event Handlers ---
+    const openSuspendConfirmModal = (userId: string, userName: string, isSuspended: boolean) => {
+        setUserToSuspend({ id: userId, name: userName, isSuspended });
+        setShowSuspendModal(true);
+    };
+
+    const confirmSuspend = async () => {
+        if (!userToSuspend) return;
+        const { id, name, isSuspended } = userToSuspend;
+        setShowSuspendModal(false);
+        setUserToSuspend(null);
+
+        const action = isSuspended ? 'unsuspend' : 'suspend';
+        try {
+            const result = await toggleUserSuspension(id);
+            toast.success(result.message);
+            setUsers(prev =>
+                prev.map(u => u._id === id ? { ...u, isSuspended: !isSuspended } : u)
+            );
+        } catch (error: any) {
+            toast.error(error?.response?.data?.message || `Failed to ${action} user.`);
+            console.error(error);
         }
+    };
+
+    const cancelSuspend = () => {
+        setShowSuspendModal(false);
+        setUserToSuspend(null);
+    };
+
+    const openMakeAdminConfirmModal = (userId: string, userName: string) => {
+        setUserToMakeAdmin({ id: userId, name: userName });
+        setShowMakeAdminModal(true);
+    };
+
+    const confirmMakeAdmin = async () => {
+        if (!userToMakeAdmin) return;
+        const { id, name } = userToMakeAdmin;
+        setShowMakeAdminModal(false);
+        setUserToMakeAdmin(null);
+
+        try {
+            const result = await makeUserAdmin(id);
+            toast.success(result.message);
+            setUsers(prev => prev.map(u => u._id === id ? { ...u, role: 'admin' } : u));
+        } catch (error: any) {
+            toast.error(error?.response?.data?.message || `Failed to make ${name} admin.`);
+            console.error(error);
+        }
+    };
+
+    const cancelMakeAdmin = () => {
+        setShowMakeAdminModal(false);
+        setUserToMakeAdmin(null);
     };
 
     const handleDeleteTask = (taskId: string, taskTitle: string) => {
@@ -237,17 +269,18 @@ const monthlyRevenueData = useMemo(() => {
         const { id, title, type } = itemToDelete;
         setShowDeleteModal(false);
         setItemToDelete(null);
-
         try {
+            let message = '';
             if (type === 'task') {
                 await deleteTaskAsAdmin(id);
-                toast.success(`Task "${title}" deleted successfully.`);
-                setTasks(prev => prev.filter(t => t._id !== id)); // Update local state
+                message = `Task "${title}" deleted successfully.`;
+                setTasks(prev => prev.filter(t => t._id !== id));
             } else if (type === 'service') {
                 await deleteServiceAsAdmin(id);
-                toast.success(`Service "${title}" deleted successfully.`);
-                setServices(prev => prev.filter(s => s._id !== id)); // Update local state
+                message = `Service "${title}" deleted successfully.`;
+                setServices(prev => prev.filter(s => s._id !== id));
             }
+            toast.success(message);
         } catch (error) {
             toast.error(`Failed to delete ${type}.`);
             console.error(error);
@@ -259,6 +292,7 @@ const monthlyRevenueData = useMemo(() => {
         setItemToDelete(null);
     };
 
+    // --- Render ---
     if (isLoading) {
         return (
             <div className="bg-slate-900 min-h-screen text-white flex items-center justify-center">
@@ -272,8 +306,9 @@ const monthlyRevenueData = useMemo(() => {
             <main className="flex-grow container mx-auto px-4 py-8">
                 <h1 className="text-4xl font-extrabold text-white mb-8">Admin Dashboard</h1>
 
+                {/* Tabs Navigation */}
                 <div className="border-b border-slate-700 mb-6">
-                    <nav className="-mb-px flex space-x-6 overflow-x-auto pb-px scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800" aria-label="Tabs">
+                    <nav className="-mb-px flex space-x-6 overflow-x-auto pb-px scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
                         <button onClick={() => setActiveTab('overview')} className={`flex-shrink-0 py-4 px-4 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'overview' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-slate-300 hover:text-white'}`}>
                             Overview
                         </button>
@@ -289,7 +324,7 @@ const monthlyRevenueData = useMemo(() => {
                     </nav>
                 </div>
 
-                {/* Tab Content Area */}
+                {/* Tab Content */}
                 <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg min-h-[400px]">
                     {activeTab === 'overview' && (
                         <AdminOverviewTab
@@ -303,16 +338,17 @@ const monthlyRevenueData = useMemo(() => {
                         <AdminUsersTab
                             users={filteredUsers}
                             searchTerm={userSearchTerm}
-                            onSearchChange={(e) => setUserSearchTerm(e.target.value)}
-                            onToggleSuspend={handleToggleSuspend}
+                            onSearchChange={e => setUserSearchTerm(e.target.value)}
+                            onOpenSuspendConfirm={openSuspendConfirmModal}
+                            onOpenMakeAdminConfirm={openMakeAdminConfirmModal}
                             formatDate={formatDate}
                         />
                     )}
                     {activeTab === 'tasks' && (
-                         <AdminTasksTab
+                        <AdminTasksTab
                             tasks={filteredTasks}
                             searchTerm={taskSearchTerm}
-                            onSearchChange={(e) => setTaskSearchTerm(e.target.value)}
+                            onSearchChange={e => setTaskSearchTerm(e.target.value)}
                             onDeleteTask={handleDeleteTask}
                             formatDate={formatDate}
                         />
@@ -321,24 +357,55 @@ const monthlyRevenueData = useMemo(() => {
                         <AdminServicesTab
                             services={filteredServices}
                             searchTerm={serviceSearchTerm}
-                            onSearchChange={(e) => setServiceSearchTerm(e.target.value)}
+                            onSearchChange={e => setServiceSearchTerm(e.target.value)}
                             onDeleteService={handleDeleteService}
                             formatDate={formatDate}
                         />
                     )}
-                    {/* Display message if no original data exists for a tab */}
-                    {activeTab === 'users' && users.length === 0 && <p className="p-10 text-center text-slate-500">No users found.</p>}
-                    {activeTab === 'tasks' && tasks.length === 0 && <p className="p-10 text-center text-slate-500">No tasks found.</p>}
-                    {activeTab === 'services' && services.length === 0 && <p className="p-10 text-center text-slate-500">No services found.</p>}
+
+                    {activeTab === 'users' && !isLoading && users.length === 0 && <p className="p-10 text-center text-slate-500">No users found.</p>}
+                    {activeTab === 'tasks' && !isLoading && tasks.length === 0 && <p className="p-10 text-center text-slate-500">No tasks found.</p>}
+                    {activeTab === 'services' && !isLoading && services.length === 0 && <p className="p-10 text-center text-slate-500">No services found.</p>}
                 </div>
             </main>
 
-            {/* Render the modal */}
+            {/* Modals */}
             <AdminDeleteConfirmationModal
                 isOpen={showDeleteModal}
                 itemToDelete={itemToDelete}
                 onConfirm={confirmDelete}
                 onCancel={cancelDelete}
+            />
+
+            <AdminConfirmationModal
+                isOpen={showMakeAdminModal}
+                title="Confirm Admin Promotion"
+                message={
+                    <>
+                        Are you sure you want to promote{' '}
+                        <span className="font-semibold text-yellow-400">{userToMakeAdmin?.name}</span>{' '}
+                        to an admin? This action grants significant permissions and cannot be easily undone.
+                    </>
+                }
+                confirmText="Make Admin"
+                iconType="warning"
+                onConfirm={confirmMakeAdmin}
+                onCancel={cancelMakeAdmin}
+            />
+
+            <AdminConfirmationModal
+                isOpen={showSuspendModal}
+                title={userToSuspend?.isSuspended ? "Confirm Unsuspend" : "Confirm Suspend"}
+                message={
+                    <>
+                        Are you sure you want to {userToSuspend?.isSuspended ? 'unsuspend' : 'suspend'}{' '}
+                        <span className="font-semibold text-yellow-400">{userToSuspend?.name}</span>?
+                    </>
+                }
+                confirmText={userToSuspend?.isSuspended ? "Unsuspend" : "Suspend"}
+                iconType="warning"
+                onConfirm={confirmSuspend}
+                onCancel={cancelSuspend}
             />
         </div>
     );

@@ -27,9 +27,8 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   // Inside notificationContext.tsx useEffect
 useEffect(() => {
     if (user && !socket) {
-      const rawApiUrl = import.meta.env.VITE_API_SocketURL || '';
+      const socketServerUrl = import.meta.env.VITE_API_SocketURL || '';
      
-      const socketServerUrl = rawApiUrl.replace(/\/api$/, ''); 
       console.log(`Attempting socket connection to: ${socketServerUrl}`); 
 
       if (socketServerUrl) {

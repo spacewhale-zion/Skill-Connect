@@ -11,7 +11,7 @@ export default defineConfig({
     tailwindcss(),
   ],
    server: { 
-    // https:false,
+    https:false,
      port: 5173,
     open: true,
   },

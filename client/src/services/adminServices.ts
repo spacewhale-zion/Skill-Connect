@@ -53,3 +53,8 @@ export const getAdminStatsData = async (): Promise<AdminStats> => {
     const { data } = await api.get('/admin/stats');
     return data;
 }
+
+export const makeUserAdmin = async (userId: string): Promise<{ message: string, user: Partial<AuthUser> }> => {
+  const { data } = await api.put(`/admin/users/${userId}/make-admin`);
+  return data;
+};

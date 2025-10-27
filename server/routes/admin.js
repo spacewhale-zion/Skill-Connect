@@ -9,7 +9,8 @@ import {
   deleteService,
   getAllTasks,   // <-- Import new controller function
   getAllServices ,// <-- Import new controller function
-  getAdminStats
+  getAdminStats,
+  makeAdmin
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -24,6 +25,7 @@ router.route('/users/:id/suspend').put(suspendUser);
 // Content Management Routes
 router.route('/tasks').get(getAllTasks); // <-- Add route to get all tasks
 router.route('/tasks/:id').delete(deleteTask);
+router.route('/users/:id/make-admin').put(makeAdmin);
 
 router.route('/services').get(getAllServices); // <-- Add route to get all services
 router.route('/services/:id').delete(deleteService);
