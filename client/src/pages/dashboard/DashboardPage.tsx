@@ -1,103 +1,48 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { useAuth } from '../../context/authContext';
-import { getMyPostedTasks, getMyAssignedTasks, getAllMyTasks } from '@/services/taskServices';
-import { getMyOfferedServices } from '@/services/serviceServices';
+// client/src/pages/dashboard/DashboardPage.tsx
+import { useDashboardPage } from '@/hooks/dashboard/useDashboardPage'; // <-- Import the new hook
 import TaskCard from '@/components/tasks/TaskCard';
 import ServiceCard from '@/components/services/ServiceCardDashBoard';
 import PostTaskModal from '@/components/tasks/PostTaskModal';
 import PostServiceModal from '@/components/services/PostServiceModel';
 import StatCard from '@/components/dasboard/StatCard';
 import EarningsSpendChart from '@/components/dasboard/EarningSpendChart';
-import toast from 'react-hot-toast';
 import type { Task, Service } from '@/types/index';
 import { FaPlus, FaTasks, FaCheckDouble, FaBolt, FaConciergeBell } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import LoadingSpinner from '@/components/layout/LoadingSpinner';
 
 const DashboardPage = () => {
-  const { user } = useAuth();
-  const [postedTasks, setPostedTasks] = useState<Task[]>([]);
-  const [Alltasks, setAllTasks] = useState<Task[]>([]);
-  const [assignedTasks, setAssignedTasks] = useState<Task[]>([]);
-  const [offeredServices, setOfferedServices] = useState<Service[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'posted' | 'booked' | 'assigned' | 'services'>('posted');
+  // --- Call the hook to get all state and logic ---
+  const {
+    user,
+    isLoading,
+    isTaskModalOpen,
+    setIsTaskModalOpen,
+    isServiceModalOpen,
+    setIsServiceModalOpen,
+    activeTab,
+    setActiveTab,
+    fetchData,
+    regularPostedTasks,
+    activeJobsCount,
+    offeredServices,
+    completedTasksCount,
+    totalEarned,
+    totalSpent,
+    itemsToShow,
+    viewAllLink,
+    bookedServices,
+    sortedAssignedTasks,
+    assignedTasks
+  } = useDashboardPage();
+  // --- All logic is now above this line ---
 
-  const fetchData = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const [posted, assigned, services,allTasks] = await Promise.all([
-        getMyPostedTasks(),
-        getMyAssignedTasks(),
-        getMyOfferedServices(),
-        getAllMyTasks()
-      ]);
-      setPostedTasks(posted);
-      setAssignedTasks(assigned);
-      setOfferedServices(services);
-      setAllTasks(allTasks); 
-    } catch (error) {
-      toast.error('Failed to load dashboard data.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // Calculations for dashboard data
-  const totalEarned = useMemo(() => {
-    return Alltasks
-      .filter(task => (task.status === 'Completed' && task.assignedProvider._id==user?._id))
-      .reduce((sum, task) => sum + task.acceptedBidAmount, 0);
-  }, [assignedTasks]);
-
-  const totalSpent = useMemo(() => {
-    return postedTasks
-      .filter(task => (task.status === 'Completed' && task.taskSeeker._id ===user?._id))
-      .reduce((sum, task) => sum + task.acceptedBidAmount, 0);
-  }, [postedTasks]);
-
-  const bookedServices = useMemo(() => postedTasks.filter(task => task.isInstantBooking), [postedTasks]);
-  const regularPostedTasks = useMemo(() => postedTasks.filter(task => !task.isInstantBooking), [postedTasks]);
-  const completedTasksCount = useMemo(() => [...postedTasks, ...assignedTasks].filter(t => t.status === 'Completed').length, [postedTasks, assignedTasks]);
-  const activeJobsCount = useMemo(() => assignedTasks.filter(t => t.status === 'Assigned' || t.status === 'CompletedByProvider').length, [assignedTasks]);
-  const sortedAssignedTasks = useMemo(() => {
-    const statusOrder = { 'Assigned': 1, 'CompletedByProvider': 2, 'Completed': 3, 'Cancelled': 4 };
-    return [...assignedTasks].sort((a, b) => {
-      const statusA = statusOrder[a.status as keyof typeof statusOrder] || 99;
-      const statusB = statusOrder[b.status as keyof typeof statusOrder] || 99;
-      return statusA - statusB;
-    });
-  }, [assignedTasks]);
-  
   if (isLoading) {
     return (
       <div className="bg-slate-900 min-h-screen text-white flex items-center justify-center">
         <LoadingSpinner />
       </div>
     );
-  }
-
-  // Logic for tab content
-  let itemsToShow: (Task | Service)[] = [];
-  let viewAllLink: string | null = null;
-
-  if (activeTab === 'posted') {
-    itemsToShow = regularPostedTasks;
-    if (regularPostedTasks.length > 3) viewAllLink = "/my-posted-tasks";
-  } else if (activeTab === 'booked') {
-    itemsToShow = bookedServices;
-  } else if (activeTab === 'assigned') {
-    itemsToShow = sortedAssignedTasks;
-    if (sortedAssignedTasks.length > 3) viewAllLink = "/my-assigned-tasks";
-  } else if (activeTab === 'services') {
-    itemsToShow = offeredServices;
-    if (offeredServices.length > 3) viewAllLink = "/my-offered-services";
   }
 
   return (

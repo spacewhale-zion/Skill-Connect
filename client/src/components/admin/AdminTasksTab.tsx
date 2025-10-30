@@ -1,49 +1,50 @@
-import React, { useState, useMemo } from 'react'; // Import useState and useMemo
+// client/src/components/admin/AdminTasksTab.tsx
+import React from 'react'; // Removed useState, useMemo
 import { Link } from 'react-router-dom';
 import type { Task } from '@/types';
-import { FaTrash, FaExternalLinkAlt, FaSearch, FaChevronLeft, FaChevronRight } from 'react-icons/fa'; // Import pagination icons
-
-// Define items per page
-const ITEMS_PER_PAGE = 30;
+import { FaTrash, FaExternalLinkAlt, FaSearch, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 interface AdminTasksTabProps {
-    tasks: Task[]; // Accept the full list
+    tasks: Task[]; // This is NOW just the tasks for the current page
     searchTerm: string;
     onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onDeleteTask: (taskId: string, taskTitle: string) => void;
     formatDate: (dateString?: string) => string;
+    // --- NEW PROPS ---
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    onPageChange: (newPage: number) => void;
 }
 
 const AdminTasksTab: React.FC<AdminTasksTabProps> = ({
-    tasks, // Full filtered list
+    tasks, // This is now currentTasks
     searchTerm,
     onSearchChange,
     onDeleteTask,
     formatDate,
+    // --- NEW PROPS ---
+    currentPage,
+    totalPages,
+    totalCount,
+    onPageChange,
 }) => {
-    const [currentPage, setCurrentPage] = useState(1);
-
-    // Calculate pagination variables
-    const totalPages = Math.ceil(tasks.length / ITEMS_PER_PAGE);
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-
-    // Get the tasks for the current page
-    const currentTasks = useMemo(() => tasks.slice(startIndex, endIndex), [tasks, startIndex, endIndex]);
+    
+    // --- REMOVED all local state and memos for pagination ---
 
     const handleNextPage = () => {
-        setCurrentPage(prev => Math.min(prev + 1, totalPages));
+        if (currentPage < totalPages) {
+            onPageChange(currentPage + 1);
+        }
     };
 
     const handlePrevPage = () => {
-        setCurrentPage(prev => Math.max(prev - 1, 1));
+        if (currentPage > 1) {
+            onPageChange(currentPage - 1);
+        }
     };
-
-    // Reset to page 1 when search term changes
-    React.useEffect(() => {
-        setCurrentPage(1);
-    }, [searchTerm]);
-
+    
+    // --- REMOVED useEffect for resetting page on searchTerm change (now handled in AdminPage) ---
 
     return (
         <div> {/* Wrap content in a div */}
@@ -63,7 +64,7 @@ const AdminTasksTab: React.FC<AdminTasksTabProps> = ({
                 </div>
             </div>
             {/* Table */}
-            <div className="overflow-x-auto"> {/* Added overflow-x-auto here */}
+            <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-slate-700">
                     <thead className="bg-slate-800">
                         <tr>
@@ -76,7 +77,7 @@ const AdminTasksTab: React.FC<AdminTasksTabProps> = ({
                         </tr>
                     </thead>
                     <tbody className="bg-slate-900 divide-y divide-slate-800">
-                        {currentTasks.map((task) => ( // Use currentTasks here
+                        {tasks.map((task) => ( // Use tasks prop directly
                             <tr key={task._id} className="hover:bg-slate-800/50">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{task.title}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">{task.taskSeeker?.name || 'N/A'}</td>
@@ -114,7 +115,7 @@ const AdminTasksTab: React.FC<AdminTasksTabProps> = ({
             {totalPages > 1 && (
                 <div className="flex justify-between items-center p-4 border-t border-slate-700 mt-4">
                     <span className="text-sm text-slate-400">
-                        Page {currentPage} of {totalPages} (Total: {tasks.length})
+                        Page {currentPage} of {totalPages} (Total: {totalCount})
                     </span>
                     <div className="flex gap-2">
                         <button

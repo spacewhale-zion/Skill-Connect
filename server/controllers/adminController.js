@@ -6,10 +6,37 @@ import Service from '../models/Service.js';
 
 // --- Existing functions (getAllUsers, suspendUser, deleteTask, deleteService) ---
 const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await User.find({})
+  const limit = parseInt(req.query.limit) || 30;
+  const page = parseInt(req.query.page) || 1;
+  const search = req.query.search || '';
+  const skip = (page - 1) * limit;
+
+  // Build search query
+  const searchQuery = search
+    ? {
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+        ],
+      }
+    : {};
+
+  // Get total count for pagination
+  const totalUsers = await User.countDocuments(searchQuery);
+
+  // Get paginated users
+  const users = await User.find(searchQuery)
     .select('-password')
-    .sort({ createdAt: -1 }); // Sort by creation date
-  res.json(users);
+    .sort({ createdAt: -1 }) // Sort by creation date
+    .skip(skip)
+    .limit(limit);
+
+  res.json({
+    results: users,
+    page,
+    totalPages: Math.ceil(totalUsers / limit),
+    totalCount: totalUsers,
+  });
 });
 
 
@@ -89,11 +116,48 @@ const deleteService = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const getAllTasks = asyncHandler(async (req, res) => {
-  const tasks = await Task.find({})
-    .populate('taskSeeker', 'name email') // Populate seeker info
-    .populate('assignedProvider', 'name email') // Populate provider info
-    .sort({ createdAt: -1 }); // Sort by creation date
-  res.json(tasks);
+
+  const limit = parseInt(req.query.limit) || 30;
+  const page = parseInt(req.query.page) || 1;
+  const search = req.query.search || '';
+  const skip = (page - 1) * limit;
+
+  let matchQuery = {};
+
+  if (search) {
+    const users = await User.find({
+      name: { $regex: search, $options: 'i' },
+    }).select('_id');
+    const userIds = users.map(u => u._id);
+
+    matchQuery = {
+      $or: [
+        { title: { $regex: search, $options: 'i' } },
+        { category: { $regex: search, $options: 'i' } },
+        { status: { $regex: search, $options: 'i' } },
+        { taskSeeker: { $in: userIds } },
+        { assignedProvider: { $in: userIds } },
+      ],
+    };
+  }
+
+  // Get total count for pagination
+  const totalTasks = await Task.countDocuments(matchQuery);
+
+  // Get paginated tasks
+  const tasks = await Task.find(matchQuery)
+    .populate('taskSeeker', 'name email')
+    .populate('assignedProvider', 'name email')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  res.json({
+    results: tasks,
+    page,
+    totalPages: Math.ceil(totalTasks / limit),
+    totalCount: totalTasks,
+  });
 });
 
 /**

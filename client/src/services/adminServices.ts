@@ -9,10 +9,37 @@ export interface AdminStats {
     totalIncome: number;
 }
 
-export const getAllUsers = async (): Promise<AuthUser[]> => {
-  const { data } = await api.get('/admin/users');
+// --- NEW: Define interfaces for paginated responses ---
+interface PaginatedUsersResponse {
+  results: AuthUser[];
+  page: number;
+  totalPages: number;
+  totalCount: number;
+}
+
+interface PaginatedTasksResponse {
+  results: Task[];
+  page: number;
+  totalPages: number;
+  totalCount: number;
+}
+
+interface AdminDataRequestParams {
+  page: number;
+  limit: number;
+  search: string;
+}
+
+export const getAllUsers = async ({ page, limit, search }: AdminDataRequestParams): Promise<PaginatedUsersResponse> => {
+  const { data } = await api.get('/admin/users', {
+    params: { page, limit, search },
+  });
   // Add createdAt if needed for sorting/display
-  return data.map(user => ({ ...user, createdAt: user.createdAt || new Date().toISOString() }));
+  const usersWithDate = data.results.map((user: AuthUser) => ({
+    ...user,
+    createdAt: user.createdAt || new Date().toISOString(),
+  }));
+  return { ...data, results: usersWithDate };
 };
 
 export const toggleUserSuspension = async (userId: string): Promise<{ message: string, user: Partial<AuthUser> }> => {
@@ -35,8 +62,10 @@ export const deleteServiceAsAdmin = async (serviceId: string): Promise<{ message
  * Fetches all tasks (Admin only).
  * Corresponds to: GET /api/admin/tasks
  */
-export const getAllTasksAsAdmin = async (): Promise<Task[]> => {
-  const { data } = await api.get('/admin/tasks');
+export const getAllTasksAsAdmin = async ({ page, limit, search }: AdminDataRequestParams): Promise<PaginatedTasksResponse> => {
+  const { data } = await api.get('/admin/tasks', {
+    params: { page, limit, search },
+  });
   return data;
 };
 
