@@ -1,10 +1,5 @@
 // client/src/pages/admin/AdminPage.tsx
-import {
-    DeletionTarget,
-    MakeAdminTarget,
-    SuspendUserTarget,
-    useAdminPage
-} from '@/hooks/admin/useAdminPage'; 
+import { useAdminPage } from '@/hooks/admin/useAdminPage'; // <-- Import the custom hook
 import LoadingSpinner from '@/components/layout/LoadingSpinner';
 import AdminOverviewTab from '@/components/admin/AdminOverviewTab';
 import AdminTasksTab from '@/components/admin/AdminTasksTab';
@@ -13,6 +8,7 @@ import AdminServicesTab from '@/components/admin/AdminServicesTab';
 import AdminDeleteConfirmationModal from '@/components/admin/AdminDeleteConfirmationModal';
 import AdminConfirmationModal from '@/components/admin/AdminConfirmationModal';
 
+// Helper to format dates consistently
 const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     try {
@@ -23,11 +19,14 @@ const formatDate = (dateString?: string) => {
 };
 
 const AdminPage = () => {
+    // --- Call the custom hook to get all state and handlers ---
     const {
         users,
         tasks,
         stats,
-        isLoading,
+        isLoading, // This is for paginated tabs
+        isLoadingStats, // This is for the *initial* page load
+        isLoadingCharts, // This is for the overview charts
         activeTab,
         setActiveTab,
         monthlyRevenueData,
@@ -48,9 +47,13 @@ const AdminPage = () => {
         setTaskSearchInput,
         setTaskPage,
         handleDeleteTask,
-        filteredServices,
-        serviceSearchTerm,
-        setServiceSearchTerm,
+       services,
+        servicePage,
+        serviceTotalPages,
+        serviceCount,
+        serviceSearchInput,
+        setServiceSearchInput,
+        setServicePage,
         handleDeleteService,
         showDeleteModal,
         itemToDelete,
@@ -66,7 +69,9 @@ const AdminPage = () => {
         cancelSuspend
     } = useAdminPage();
 
-    if (isLoading && !stats) { 
+    // --- Render ---
+    // Show main loader *only* if stats are loading (initial load)
+    if (isLoadingStats) { 
         return (
             <div className="bg-slate-900 min-h-screen text-white flex items-center justify-center">
                 <LoadingSpinner />
@@ -92,18 +97,20 @@ const AdminPage = () => {
                             Manage Tasks ({taskCount})
                         </button>
                         <button onClick={() => setActiveTab('services')} className={`flex-shrink-0 py-4 px-4 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'services' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-slate-300 hover:text-white'}`}>
-                            Manage Services ({filteredServices.length})
+                            Manage Services ({serviceCount})
                         </button>
                     </nav>
                 </div>
 
-                <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg min-h-[400px]">
+                {/* Tab Content */}
+                <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg min-h-[400px] relative">
                     {activeTab === 'overview' && (
                         <AdminOverviewTab
                             stats={stats}
                             userSignupData={userSignupData}
                             taskStatusData={taskStatusData}
                             monthlyRevenueData={monthlyRevenueData}
+                            isLoading={isLoadingCharts} // <-- Pass the chart loader
                         />
                     )}
                     {activeTab === 'users' && (
@@ -133,31 +140,36 @@ const AdminPage = () => {
                             onPageChange={setTaskPage}
                         />
                     )}
-                    {activeTab === 'services' && (
+                  {activeTab === 'services' && (
                         <AdminServicesTab
-                            services={filteredServices}
-                            searchTerm={serviceSearchTerm}
-                            onSearchChange={e => setServiceSearchTerm(e.target.value)}
+                            services={services}
+                            searchTerm={serviceSearchInput}
+                            onSearchChange={e => setServiceSearchInput(e.target.value)}
                             onDeleteService={handleDeleteService}
                             formatDate={formatDate}
+                            currentPage={servicePage}
+                            totalPages={serviceTotalPages}
+                            totalCount={serviceCount}
+                            onPageChange={setServicePage}
                         />
                     )}
 
+                    {/* Show overlay loader for paginated data fetching */}
                     {isLoading && (
-                        <div className="absolute inset-0 bg-slate-800/50 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-slate-800/50 flex items-center justify-center z-20">
                             <LoadingSpinner />
                         </div>
                     )}
                 </div>
             </main>
 
+            {/* Modals */}
             <AdminDeleteConfirmationModal
                 isOpen={showDeleteModal}
                 itemToDelete={itemToDelete}
                 onConfirm={confirmDelete}
                 onCancel={cancelDelete}
             />
-
             <AdminConfirmationModal
                 isOpen={showMakeAdminModal}
                 title="Confirm Admin Promotion"
@@ -173,7 +185,6 @@ const AdminPage = () => {
                 onConfirm={confirmMakeAdmin}
                 onCancel={cancelMakeAdmin}
             />
-
             <AdminConfirmationModal
                 isOpen={showSuspendModal}
                 title={userToSuspend?.isSuspended ? "Confirm Unsuspend" : "Confirm Suspend"}

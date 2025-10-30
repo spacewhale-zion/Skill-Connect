@@ -39,6 +39,114 @@ const getAllUsers = asyncHandler(async (req, res) => {
   });
 });
 
+const getAdminChartData = asyncHandler(async (req, res) => {
+  const currentYear = new Date().getFullYear();
+  const currentMonthIndex = new Date().getMonth(); // 0-11
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  try {
+    // 1. User Signups This Year
+    const userSignupsAgg = await User.aggregate([
+      {
+        $match: {
+          createdAt: {
+            $gte: new Date(currentYear, 0, 1),
+            $lt: new Date(currentYear + 1, 0, 1),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: '$createdAt' }, // Group by month (1-12)
+          users: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } }, // Sort by month
+    ]);
+
+    // 2. Task Status Distribution
+    const taskStatusAgg = await Task.aggregate([
+      {
+        $group: {
+          _id: '$status',
+          value: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          name: '$_id',
+          value: '$value',
+        },
+      },
+    ]);
+
+    // 3. Monthly Revenue This Year
+    const monthlyRevenueAgg = await Task.aggregate([
+      {
+        $match: {
+          status: 'Completed',
+          paymentMethod: 'Stripe',
+          completedAt: {
+            $gte: new Date(currentYear, 0, 1),
+            $lt: new Date(currentYear + 1, 0, 1),
+          },
+          acceptedBidAmount: { $exists: true, $type: 'number' }
+        },
+      },
+      {
+        $group: {
+          _id: { $month: '$completedAt' }, // Group by month (1-12)
+          totalRevenue: { $sum: { $multiply: ['$acceptedBidAmount', 0.10] } }, // 10% fee
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // --- Format Data for Frontend ---
+
+    // Format User Signups
+    const userSignupData = monthNames.slice(0, currentMonthIndex + 1).map((monthName, index) => {
+      const monthIndex = index + 1;
+      const data = userSignupsAgg.find(item => item._id === monthIndex);
+      return {
+        name: monthName,
+        users: data ? data.users : 0,
+      };
+    });
+
+    // Format Task Status
+    const allStatuses = ['Open', 'Assigned', 'Pending Payment', 'CompletedByProvider', 'Completed', 'Cancelled'];
+    const taskStatusData = allStatuses.map(statusName => {
+      const data = taskStatusAgg.find(item => item.name === statusName);
+      return {
+        name: statusName,
+        value: data ? data.value : 0,
+      };
+    }).filter(d => d.value > 0); // Optionally filter out zero-value statuses
+
+    // Format Monthly Revenue
+    const monthlyRevenueData = monthNames.slice(0, currentMonthIndex + 1).map((monthName, index) => {
+      const monthIndex = index + 1;
+      const data = monthlyRevenueAgg.find(item => item._id === monthIndex);
+      return {
+        name: monthName,
+        revenue: data ? parseFloat(data.totalRevenue.toFixed(2)) : 0,
+      };
+    });
+
+    res.json({
+      userSignupData,
+      taskStatusData,
+      monthlyRevenueData,
+    });
+
+  } catch (error) {
+    res.status(500);
+    throw new Error(`Failed to get chart data: ${error.message}`);
+  }
+});
+
 
 const suspendUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
@@ -193,10 +301,46 @@ const getAdminStats = asyncHandler(async (req, res) => {
  * @access  Private/Admin
  */
 const getAllServices = asyncHandler(async (req, res) => {
-  const services = await Service.find({})
-    .populate('provider', 'name email') // Populate provider info
-    .sort({ createdAt: -1 }); // Sort by creation date
-  res.json(services);
+  const limit = parseInt(req.query.limit) || 30;
+  const page = parseInt(req.query.page) || 1;
+  const search = req.query.search || '';
+  const skip = (page - 1) * limit;
+
+  let matchQuery = {};
+
+  if (search) {
+    // Find users (providers) who match the search term
+    const users = await User.find({
+      name: { $regex: search, $options: 'i' },
+    }).select('_id');
+    const userIds = users.map(u => u._id);
+
+    // Search by title, category, or matching provider user IDs
+    matchQuery = {
+      $or: [
+        { title: { $regex: search, $options: 'i' } },
+        { category: { $regex: search, $options: 'i' } },
+        { provider: { $in: userIds } },
+      ],
+    };
+  }
+
+  // Get total count for pagination
+  const totalServices = await Service.countDocuments(matchQuery);
+
+  // Get paginated services
+  const services = await Service.find(matchQuery)
+    .populate('provider', 'name email')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  res.json({
+    results: services,
+    page,
+    totalPages: Math.ceil(totalServices / limit),
+    totalCount: totalServices,
+  });
 });
 
 
@@ -249,5 +393,6 @@ export {
   getAllTasks,   // <-- Export new function
   getAllServices, // <-- Export new function
   getAdminStats,
-  makeAdmin
+  makeAdmin,
+  getAdminChartData
 };

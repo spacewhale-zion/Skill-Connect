@@ -1,30 +1,37 @@
-import React, { useState } from 'react'; // Import useState
+// client/src/components/admin/AdminOverviewTab.tsx
+import React, { useState } from 'react';
 import StatCard from '@/components/dasboard/StatCard';
 import { AdminStats } from '@/services/adminServices';
-import { FaUsers, FaTasks, FaClipboardCheck, FaConciergeBell, FaRupeeSign, FaChartBar, FaChartPie, FaCalendarAlt } from 'react-icons/fa'; // Added chart icons
+import { FaUsers, FaTasks, FaClipboardCheck, FaConciergeBell, FaRupeeSign, FaChartBar, FaChartPie, FaCalendarAlt } from 'react-icons/fa';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, PieLabelRenderProps } from 'recharts';
+import LoadingSpinner from '@/components/layout/LoadingSpinner'; // <-- Import loader
 
 interface AdminOverviewTabProps {
     stats: AdminStats | null;
     userSignupData: { name: string; users: number }[];
     taskStatusData: { name: string; value: number }[];
     monthlyRevenueData: { name: string; revenue: number }[];
+    isLoading: boolean; // <-- Add isLoading prop
 }
 
 const COLORS = ['#38bdf8', '#f472b6', '#facc15', '#34d399', '#fb7185', '#a78bfa'];
 const REVENUE_COLOR = '#82ca9d';
 
-// Define the possible chart types
 type ChartType = 'signups' | 'revenue' | 'status';
 
-const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({ stats, userSignupData, taskStatusData, monthlyRevenueData }) => {
-    // State to manage the currently selected chart
+const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({ stats, userSignupData, taskStatusData, monthlyRevenueData, isLoading }) => {
     const [selectedChart, setSelectedChart] = useState<ChartType>('signups');
 
-    // Add console log to check data props
-    console.log("AdminOverviewTab - Props Data:", { userSignupData, taskStatusData, monthlyRevenueData });
-
     const renderChart = () => {
+        // --- Show loader if charts are loading ---
+        if (isLoading) {
+            return (
+                <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 h-[400px] flex items-center justify-center">
+                    <LoadingSpinner />
+                </div>
+            );
+        }
+
         switch (selectedChart) {
             case 'signups':
                 return (
@@ -56,7 +63,7 @@ const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({ stats, userSignupDa
                     <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 h-[400px]">
                         <h3 className="text-lg font-semibold text-white mb-4">Estimated Monthly Revenue (10% Fee)</h3>
                         <ResponsiveContainer width="100%" height="90%">
-                            {monthlyRevenueData?.some(d => d.revenue >= 0) ? (
+                            {monthlyRevenueData?.some(d => d.revenue > 0) ? ( // Check for > 0
                                 <BarChart data={monthlyRevenueData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#475569" opacity={0.5} />
                                     <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
@@ -95,11 +102,8 @@ const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({ stats, userSignupDa
                                         dataKey="value"
                                         paddingAngle={2}
                                         label={(props: PieLabelRenderProps) => {
-                                            // Ensure props.percent and props.name are defined before accessing
                                             if (props.percent === undefined || props.name === undefined) return null;
-                                            // Type assertion for safety
                                             const percentValue = props.percent as number;
-                                            // Only show label if percentage is significant
                                             return percentValue > 0.05 ? `${props.name} ${(percentValue * 100).toFixed(0)}%` : null;
                                         }}
                                         fontSize={12}
@@ -126,7 +130,6 @@ const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({ stats, userSignupDa
         }
     };
 
-    // Helper for sidebar button styling
     const sidebarButtonClass = (chartType: ChartType) => `
         w-full text-left px-4 py-3 rounded-md flex items-center gap-3 transition-colors duration-200
         ${selectedChart === chartType
@@ -150,9 +153,7 @@ const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({ stats, userSignupDa
                 </div>
             )}
 
-            {/* Flex container for sidebar + chart area */}
             <div className="flex flex-col md:flex-row gap-8">
-                {/* Sidebar */}
                 <div className="w-full md:w-64 flex-shrink-0 bg-slate-800/50 border border-slate-700 rounded-lg p-4 space-y-2 self-start">
                     <h3 className="text-lg font-semibold text-white mb-3 px-2">Charts</h3>
                     <button onClick={() => setSelectedChart('signups')} className={sidebarButtonClass('signups')}>
@@ -166,7 +167,6 @@ const AdminOverviewTab: React.FC<AdminOverviewTabProps> = ({ stats, userSignupDa
                     </button>
                 </div>
 
-                {/* Main Chart Area */}
                 <div className="flex-grow min-w-0">
                     {renderChart()}
                 </div>

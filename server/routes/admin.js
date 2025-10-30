@@ -10,7 +10,8 @@ import {
   getAllTasks,   // <-- Import new controller function
   getAllServices ,// <-- Import new controller function
   getAdminStats,
-  makeAdmin
+  makeAdmin,
+  getAdminChartData
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -29,5 +30,6 @@ router.route('/users/:id/make-admin').put(makeAdmin);
 
 router.route('/services').get(getAllServices); // <-- Add route to get all services
 router.route('/services/:id').delete(deleteService);
+router.route('/chart-data').get(getAdminChartData);
 
 export default router;

@@ -9,12 +9,13 @@ import {
     getAllServicesAsAdmin,
     getAdminStatsData,
     AdminStats,
-    makeUserAdmin
+    makeUserAdmin,
+    getAdminChartData
 } from '@/services/adminServices';
 import toast from 'react-hot-toast';
 import type { AuthUser, Task, Service } from '@/types';
 
-// Types for modals (exported so the page can use them)
+// Types for modals
 export type DeletionTarget = {
     id: string;
     title: string;
@@ -40,8 +41,13 @@ export const useAdminPage = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [services, setServices] = useState<Service[]>([]);
     const [stats, setStats] = useState<AdminStats | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'tasks' | 'services'>('overview');
+    
+    // Loading states
+    const [isLoading, setIsLoading] = useState(false); // For paginated data (users/tasks)
+    const [isLoadingStats, setIsLoadingStats] = useState(true); // For initial page load (stats/services)
+    const [isLoadingCharts, setIsLoadingCharts] = useState(true); // For overview charts
+    const [hasFetchedCharts, setHasFetchedCharts] = useState(false);
 
     // Pagination & Search State
     const [userPage, setUserPage] = useState(1);
@@ -56,7 +62,11 @@ export const useAdminPage = () => {
     const [taskSearchTerm, setTaskSearchTerm] = useState(''); // Debounced
     const [taskSearchInput, setTaskSearchInput] = useState(''); // Raw
 
-    const [serviceSearchTerm, setServiceSearchTerm] = useState(''); // Client-side
+    const [servicePage, setServicePage] = useState(1);
+    const [serviceTotalPages, setServiceTotalPages] = useState(1);
+    const [serviceCount, setServiceCount] = useState(0);
+    const [serviceSearchTerm, setServiceSearchTerm] = useState(''); // Debounced
+    const [serviceSearchInput, setServiceSearchInput] = useState(''); // Raw input
 
     // Modal States
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -67,8 +77,17 @@ export const useAdminPage = () => {
     const [userToSuspend, setUserToSuspend] = useState<SuspendUserTarget>(null);
 
     // Chart Data States
-    const [allTasks, setAllTasks] = useState<Task[]>([]);
-    const [allUsers, setAllUsers] = useState<AuthUser[]>([]);
+    const [userSignupData, setUserSignupData] = useState<{ name: string; users: number }[]>([]);
+    const [taskStatusData, setTaskStatusData] = useState<{ name: string; value: number }[]>([]);
+    const [monthlyRevenueData, setMonthlyRevenueData] = useState<{ name: string; revenue: number }[]>([]);
+   
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setServiceSearchTerm(serviceSearchInput);
+            setServicePage(1); // Reset to first page on new search
+        }, 500);
+        return () => clearTimeout(handler);
+    }, [serviceSearchInput]);
 
     // --- Debounce search terms ---
     useEffect(() => {
@@ -91,11 +110,7 @@ export const useAdminPage = () => {
     const fetchUsers = useCallback(async () => {
         setIsLoading(true);
         try {
-            const data = await getAllUsers({
-                page: userPage,
-                limit: ADMIN_PAGE_LIMIT,
-                search: userSearchTerm,
-            });
+            const data = await getAllUsers({ page: userPage, limit: ADMIN_PAGE_LIMIT, search: userSearchTerm });
             setUsers(data.results);
             setUserTotalPages(data.totalPages);
             setUserCount(data.totalCount);
@@ -109,11 +124,7 @@ export const useAdminPage = () => {
     const fetchTasks = useCallback(async () => {
         setIsLoading(true);
         try {
-            const data = await getAllTasksAsAdmin({
-                page: taskPage,
-                limit: ADMIN_PAGE_LIMIT,
-                search: taskSearchTerm,
-            });
+            const data = await getAllTasksAsAdmin({ page: taskPage, limit: ADMIN_PAGE_LIMIT, search: taskSearchTerm });
             setTasks(data.results);
             setTaskTotalPages(data.totalPages);
             setTaskCount(data.totalCount);
@@ -124,130 +135,79 @@ export const useAdminPage = () => {
         }
     }, [taskPage, taskSearchTerm]);
 
-    const fetchOtherData = useCallback(async () => {
+    // --- NEW: fetchServices (paginated) ---
+    const fetchServices = useCallback(async () => {
         setIsLoading(true);
         try {
-            const [servicesData, statsData] = await Promise.all([
-                getAllServicesAsAdmin(),
-                getAdminStatsData()
-            ]);
-            setServices(servicesData);
-            setStats(statsData);
+            const data = await getAllServicesAsAdmin({
+                page: servicePage,
+                limit: ADMIN_PAGE_LIMIT,
+                search: serviceSearchTerm,
+            });
+            setServices(data.results);
+            console.log(services)
+            setServiceTotalPages(data.totalPages);
+            setServiceCount(data.totalCount);
         } catch (error) {
-            toast.error('Failed to load admin data.');
+            toast.error('Failed to load services.');
         } finally {
             setIsLoading(false);
+        }
+    }, [servicePage, serviceSearchTerm,]);
+    
+    // --- UPDATED: Renamed to fetchStats, only fetches stats ---
+    const fetchStats = useCallback(async () => {
+        setIsLoadingStats(true); 
+        try {
+            const statsData = await getAdminStatsData();
+            setStats(statsData);
+        } catch (error) {
+            toast.error('Failed to load admin stats.');
+        } finally {
+            setIsLoadingStats(false);
+        }
+    }, []);
+
+    const fetchChartData = useCallback(async () => {
+        setIsLoadingCharts(true);
+        try {
+            const data = await getAdminChartData();
+            setUserSignupData(data.userSignupData);
+            setTaskStatusData(data.taskStatusData);
+            setMonthlyRevenueData(data.monthlyRevenueData);
+            setHasFetchedCharts(true); // Mark charts as fetched
+        } catch (error) {
+             toast.error('Failed to load chart data.');
+        } finally {
+            setIsLoadingCharts(false);
         }
     }, []);
 
     // --- Main Effects ---
+
+    // 1. Fetch Stats and Services on mount (this is the main page load)
+    useEffect(() => {
+        fetchStats();
+    }, [fetchStats]);
+    
+    // 2. Fetch data based on the active tab
     useEffect(() => {
         if (activeTab === 'users') {
             fetchUsers();
         } else if (activeTab === 'tasks') {
             fetchTasks();
-        } else if (activeTab === 'overview') {
-            // Fetch paginated data for display and all data for charts
-            fetchTasks();
-            fetchUsers();
-            fetchOtherData();
             
-            // Fetch all data for charts
-            const fetchAllForCharts = async () => {
-                try {
-                    const [allT, allU] = await Promise.all([
-                        getAllTasksAsAdmin({ page: 1, limit: 10000, search: '' }),
-                        getAllUsers({ page: 1, limit: 10000, search: '' })
-                    ]);
-                    setAllTasks(allT.results);
-                    setAllUsers(allU.results);
-                } catch (e) {
-                    console.error("Failed to load chart data", e);
-                }
-            };
-            fetchAllForCharts();
-
-        } else if (activeTab === 'services') {
-            if (services.length === 0) fetchOtherData();
+        } 
+        else if (activeTab === 'services'){
+            fetchServices();
         }
-    }, [activeTab, fetchUsers, fetchTasks, fetchOtherData, services.length]);
-
-    // --- Memoized Chart Data & Filters ---
-    const monthlyRevenueData = useMemo(() => {
-        if (!allTasks || allTasks.length === 0) return [];
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const currentYear = new Date().getFullYear();
-        const monthlyRevenue: Record<string, number> = {};
-        monthNames.forEach(month => { monthlyRevenue[month] = 0; });
-
-        allTasks.forEach(task => {
-            const bidAmount = typeof task.acceptedBidAmount === 'number' ? task.acceptedBidAmount : 0;
-            if (task.status === 'Completed' && task.paymentMethod === 'Stripe' && task.completedAt) {
-                try {
-                    const completionDate = new Date(task.completedAt);
-                    if (completionDate.getFullYear() === currentYear) {
-                        const monthIndex = completionDate.getMonth();
-                        const monthName = monthNames[monthIndex];
-                        if (monthName) monthlyRevenue[monthName] += bidAmount * 0.1;
-                    }
-                } catch (e) {
-                    console.warn(`Invalid date for task ${task._id}: ${task.completedAt}`);
-                }
-            }
-        });
-        const currentMonthIndex = new Date().getMonth();
-        return monthNames.slice(0, currentMonthIndex + 1).map(month => ({
-            name: month,
-            revenue: parseFloat(monthlyRevenue[month].toFixed(2))
-        }));
-    }, [allTasks]);
-
-    const taskStatusData = useMemo(() => {
-        if (!allTasks) return [];
-        const statusCounts = allTasks.reduce((acc, task) => {
-            const statusKey = task.status || 'Unknown';
-            acc[statusKey] = (acc[statusKey] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
-        ['Open', 'Assigned', 'Pending Payment', 'CompletedByProvider', 'Completed', 'Cancelled'].forEach(status => {
-            if (!statusCounts[status]) statusCounts[status] = 0;
-        });
-        if (statusCounts['Unknown'] === undefined) statusCounts['Unknown'] = 0;
-        return Object.entries(statusCounts).map(([name, value]) => ({ name, value }));
-    }, [allTasks]);
-
-    const userSignupData = useMemo(() => {
-        if (!allUsers || allUsers.length === 0) return [];
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const currentYear = new Date().getFullYear();
-        const monthlySignups: Record<string, number> = {};
-        monthNames.forEach(month => { monthlySignups[month] = 0; });
-        allUsers.forEach(user => {
-            if (user.createdAt) {
-                try {
-                    const signupDate = new Date(user.createdAt);
-                    if (signupDate.getFullYear() === currentYear) {
-                        monthlySignups[monthNames[signupDate.getMonth()]]++;
-                    }
-                } catch {}
-            }
-        });
-        const currentMonthIndex = new Date().getMonth();
-        return monthNames.slice(0, currentMonthIndex + 1).map(month => ({
-            name: month,
-            users: monthlySignups[month]
-        }));
-    }, [allUsers]);
-
-    const filteredServices = useMemo(() => {
-        if (!serviceSearchTerm) return services;
-        const lowerCaseSearch = serviceSearchTerm.toLowerCase();
-        return services.filter(service =>
-            service.title.toLowerCase().includes(lowerCaseSearch) ||
-            service.provider?.name?.toLowerCase().includes(lowerCaseSearch) ||
-            service.category?.toLowerCase().includes(lowerCaseSearch)
-        );
-    }, [services, serviceSearchTerm]);
+        else if (activeTab === 'overview' && !hasFetchedCharts) {
+            // Only fetch charts if they haven't been fetched yet
+            fetchChartData();
+        }
+    }, [activeTab, fetchUsers, fetchTasks,fetchServices, fetchChartData, hasFetchedCharts]);
+    
+   
 
     // --- Modal Event Handlers ---
     const openSuspendConfirmModal = (userId: string, userName: string, isSuspended: boolean) => {
@@ -308,7 +268,7 @@ export const useAdminPage = () => {
         setShowDeleteModal(true);
     };
 
-    const confirmDelete = async () => {
+   const confirmDelete = async () => {
         if (!itemToDelete) return;
         const { id, title, type } = itemToDelete;
         setShowDeleteModal(false);
@@ -323,6 +283,7 @@ export const useAdminPage = () => {
                 await deleteServiceAsAdmin(id);
                 toast.success(`Service "${title}" deleted.`);
                 setServices(prev => prev.filter(s => s._id !== id));
+                setServiceCount(prev => prev - 1); // <-- UPDATED
             }
         } catch (error) {
             toast.error(`Failed to delete ${type}.`);
@@ -341,6 +302,8 @@ export const useAdminPage = () => {
         services,
         stats,
         isLoading,
+        isLoadingStats,
+        isLoadingCharts,
         activeTab,
         setActiveTab,
         userPage,
@@ -355,8 +318,12 @@ export const useAdminPage = () => {
         taskSearchInput,
         setTaskSearchInput,
         setTaskPage,
-        serviceSearchTerm,
-        setServiceSearchTerm,
+        servicePage,
+        serviceTotalPages,
+        serviceCount,
+        serviceSearchInput,
+        setServiceSearchInput,
+        setServicePage,
         showDeleteModal,
         itemToDelete,
         showMakeAdminModal,
@@ -366,7 +333,6 @@ export const useAdminPage = () => {
         monthlyRevenueData,
         taskStatusData,
         userSignupData,
-        filteredServices,
         openSuspendConfirmModal,
         confirmSuspend,
         cancelSuspend,

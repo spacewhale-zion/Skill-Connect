@@ -16,6 +16,12 @@ interface PaginatedUsersResponse {
   totalPages: number;
   totalCount: number;
 }
+interface PaginatedServicesResponse {
+  results: Service[];
+  page: number;
+  totalPages: number;
+  totalCount: number;
+}
 
 interface PaginatedTasksResponse {
   results: Task[];
@@ -28,6 +34,12 @@ interface AdminDataRequestParams {
   page: number;
   limit: number;
   search: string;
+}
+
+export interface ChartDataResponse {
+  userSignupData: { name: string; users: number }[];
+  taskStatusData: { name: string; value: number }[];
+  monthlyRevenueData: { name: string; revenue: number }[];
 }
 
 export const getAllUsers = async ({ page, limit, search }: AdminDataRequestParams): Promise<PaginatedUsersResponse> => {
@@ -73,8 +85,10 @@ export const getAllTasksAsAdmin = async ({ page, limit, search }: AdminDataReque
  * Fetches all services (Admin only).
  * Corresponds to: GET /api/admin/services
  */
-export const getAllServicesAsAdmin = async (): Promise<Service[]> => {
-  const { data } = await api.get('/admin/services');
+export const getAllServicesAsAdmin = async ({ page, limit, search }: AdminDataRequestParams): Promise<PaginatedServicesResponse> => {
+  const { data } = await api.get('/admin/services', {
+    params: { page, limit, search },
+  });
   return data;
 };
 
@@ -86,4 +100,9 @@ export const getAdminStatsData = async (): Promise<AdminStats> => {
 export const makeUserAdmin = async (userId: string): Promise<{ message: string, user: Partial<AuthUser> }> => {
   const { data } = await api.put(`/admin/users/${userId}/make-admin`);
   return data;
+};
+
+export const getAdminChartData = async (): Promise<ChartDataResponse> => {
+    const { data } = await api.get('/admin/chart-data');
+    return data;
 };

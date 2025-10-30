@@ -12,6 +12,10 @@ interface AdminServicesTabProps {
     onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onDeleteService: (serviceId: string, serviceTitle: string) => void;
     formatDate: (dateString?: string) => string;
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    onPageChange: (newPage: number) => void;
 }
 
 const AdminServicesTab: React.FC<AdminServicesTabProps> = ({
@@ -30,6 +34,9 @@ const AdminServicesTab: React.FC<AdminServicesTabProps> = ({
 
     // Get the services for the current page
     const currentServices = useMemo(() => services.slice(startIndex, endIndex), [services, startIndex, endIndex]);
+    
+    // console.log(services)
+    // console.log(currentServices)
 
     const handleNextPage = () => {
         setCurrentPage(prev => Math.min(prev + 1, totalPages));
