@@ -18,10 +18,7 @@ import Service from '../models/Service.js';
 const createTask = asyncHandler(async (req, res) => {
   const { title, description, category, budget, location } = req.body;
 
-  if (!title || !description || !category || !budget || !location) {
-    res.status(400);
-    throw new Error('Please provide all required fields.');
-  }
+
 
   const task = await Task.create({
     title,

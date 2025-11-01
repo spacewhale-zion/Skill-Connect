@@ -15,6 +15,8 @@ import {
 } from '../controllers/taskController.js';
 import { createBid, getBidsForTask } from '../controllers/bidController.js';
 import { createReview } from '../controllers/reviewController.js';
+import { validate } from '../middleware/validationMiddleware.js';
+import { createTaskSchema } from '../middleware/validationSchema.js';
 
 const router = express.Router();
 
@@ -26,7 +28,7 @@ router.route('/mytasks').get(protect, getMyPostedTasks);
 router.route('/assignedtome').get(protect, getMyAssignedTasks);
 
 router.route('/')
-  .post(protect, createTask)
+  .post(protect, validate(createTaskSchema), createTask)
   .get(getTasks);
 
 // Parameterized routes come last

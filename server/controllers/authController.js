@@ -14,10 +14,6 @@ const generateToken = (id) => {
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, location, skills, fcmToken } = req.body;
 
-  if (!name || !email || !password || !location || !location.coordinates) {
-    res.status(400);
-    throw new Error('Please provide all required fields');
-  }
 
   const userExists = await User.findOne({ email });
   if (userExists) {

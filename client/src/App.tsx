@@ -1,37 +1,36 @@
-import { Routes, Route } from 'react-router-dom';
-import { useState } from 'react';
+import { Routes, Route } from "react-router-dom";
+import { useState, Suspense, lazy } from "react";
 
-// Page & Layout Imports
-import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
-import HomePage from './pages/HomePage';
-import DashboardLayout from './pages/dashboard/DashboardLayout';
-import TaskDetailsPage from './pages/tasks/TaskDetailsPage';
-import ProfilePage from './pages/dashboard/ProfilePage';
-import FindTasksPage from './pages/tasks/FindTaskPage';
-import NotificationsPage from './pages/notifications/NotificationsPage';
-import FindServicesPage from './pages/services/FindServicePage';
-import ServiceDetailsPage from './pages/services/ServiceDetailsPage';
-import AllMyPostedTasksPage from './pages/tasks/my-tasks/MyPostedTasksPage';
-import AllMyAssignedTasksPage from './pages/tasks/my-tasks/MyAssignedTasksPage';
-import AllMyServicesPage from './pages/services/my-services/MyOfferedServicesPage';
-import AllMyBookedServicesPage from './pages/services/my-services/MyBookedServicesPage';
-import AllMyTasksPage from './pages/tasks/my-tasks/AllMyTasksPage';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
-import VerifyEmailPage from './pages/auth/VerifyEmailPage';
-import AdminPage from './pages/admin/AdminPage';
-import AdminRoute from './components/auth/AdminRoute';
-import SuspendedPage from './pages/auth/SuspendedPage';
-// Component Imports
-import NotificationPermissionHandler from '@/components/notifications/NotificationHandler';
-import ChatWindow from '@/components/chat/ChatWindow';
-import ProtectedRoute from '@/components/auth/ProtectedRoute'; // <-- 1. Import ProtectedRoute
+// Layout & Components (non-lazy)
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
+import ChatWindow from "@/components/chat/ChatWindow";
+import NotificationPermissionHandler from "@/components/notifications/NotificationHandler";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import AdminRoute from "@/components/auth/AdminRoute";
+import type { AuthUser } from "@/types";
 
-// Type and Hook Imports
-import type { AuthUser } from '@/types';
-import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
-import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+// 🔹 Lazy-loaded pages
+const HomePage = lazy(() => import("./pages/HomePage"));
+const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
+const RegisterPage = lazy(() => import("./pages/auth/RegisterPage"));
+const DashboardLayout = lazy(() => import("./pages/dashboard/DashboardLayout"));
+const TaskDetailsPage = lazy(() => import("./pages/tasks/TaskDetailsPage"));
+const ProfilePage = lazy(() => import("./pages/dashboard/ProfilePage"));
+const FindTasksPage = lazy(() => import("./pages/tasks/FindTaskPage"));
+const NotificationsPage = lazy(() => import("./pages/notifications/NotificationsPage"));
+const FindServicesPage = lazy(() => import("./pages/services/FindServicePage"));
+const ServiceDetailsPage = lazy(() => import("./pages/services/ServiceDetailsPage"));
+const AllMyPostedTasksPage = lazy(() => import("./pages/tasks/my-tasks/MyPostedTasksPage"));
+const AllMyAssignedTasksPage = lazy(() => import("./pages/tasks/my-tasks/MyAssignedTasksPage"));
+const AllMyServicesPage = lazy(() => import("./pages/services/my-services/MyOfferedServicesPage"));
+const AllMyBookedServicesPage = lazy(() => import("./pages/services/my-services/MyBookedServicesPage"));
+const AllMyTasksPage = lazy(() => import("./pages/tasks/my-tasks/AllMyTasksPage"));
+const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/auth/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage"));
+const AdminPage = lazy(() => import("./pages/admin/AdminPage"));
+const SuspendedPage = lazy(() => import("./pages/auth/SuspendedPage"));
 
 function App() {
   const [chatWindowData, setChatWindowData] = useState<{
@@ -52,80 +51,124 @@ function App() {
       {chatWindowData && (
         <ChatWindow
           taskId={chatWindowData.conversationId}
-          recipient={{ _id: chatWindowData.recipientId, name: chatWindowData.recipientName } as AuthUser}
+          recipient={{
+            _id: chatWindowData.recipientId,
+            name: chatWindowData.recipientName,
+          } as AuthUser}
           onClose={() => setChatWindowData(null)}
         />
       )}
 
-      <Routes>
-        {/* --- Public Routes --- */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/tasks" element={<FindTasksPage />} />
-        <Route path="/services" element={<FindServicesPage />} />
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
-         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password/:token" element={<ResetPasswordPage/>} />
-        <Route path="/suspended" element={<SuspendedPage />} />
-        
-        {/* --- Protected Routes --- */}
-        {/* Wrap the element of each protected route with the ProtectedRoute component */}
-        <Route
-          path="/dashboard"
-          element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}
-        />
-        <Route
-          path="/tasks/:taskId"
-          element={<ProtectedRoute><TaskDetailsPage /></ProtectedRoute>}
-        />
-         <Route
-          path="/services/:serviceId"
-          element={<ProtectedRoute><ServiceDetailsPage /></ProtectedRoute>}
-        />
-        <Route
-          path="/profile"
-          element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
-        />
-        <Route
-          path="/notifications"
-          element={
-            <ProtectedRoute>
-              <NotificationsPage
-                openChatWindow={openChatWindow}
-                activeChatId={chatWindowData?.conversationId}
-              />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/my-posted-tasks"
-          element={<ProtectedRoute><AllMyPostedTasksPage /></ProtectedRoute>}
-        />
-        <Route
-          path="/my-assigned-tasks"
-          element={<ProtectedRoute><AllMyAssignedTasksPage /></ProtectedRoute>}
-        />
-        <Route
-          path="/my-offered-services"
-          element={<ProtectedRoute><AllMyServicesPage /></ProtectedRoute>}
-        />
-        <Route
-          path="/my-booked-services"
-          element={<ProtectedRoute><AllMyBookedServicesPage /></ProtectedRoute>}
-        />
-        <Route
-          path="/my-all-tasks"
-          element={<ProtectedRoute><AllMyTasksPage /></ProtectedRoute>}
-        />
+      {/* 🔹 Wrap all routes in Suspense fallback */}
+      <Suspense fallback={<div className="text-center mt-10">Loading...</div>}>
+        <Routes>
+          {/* --- Public Routes --- */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/tasks" element={<FindTasksPage />} />
+          <Route path="/services" element={<FindServicesPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+          <Route path="/suspended" element={<SuspendedPage />} />
 
-        {/* --- Protected Admin Route --- */}
-        <Route
-          path="/admin"
-          element={<AdminRoute><AdminPage /></AdminRoute>} // Use AdminRoute
-        />
+          {/* --- Protected Routes --- */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tasks/:taskId"
+            element={
+              <ProtectedRoute>
+                <TaskDetailsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/services/:serviceId"
+            element={
+              <ProtectedRoute>
+                <ServiceDetailsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsPage
+                  openChatWindow={openChatWindow}
+                  activeChatId={chatWindowData?.conversationId}
+                />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-posted-tasks"
+            element={
+              <ProtectedRoute>
+                <AllMyPostedTasksPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-assigned-tasks"
+            element={
+              <ProtectedRoute>
+                <AllMyAssignedTasksPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-offered-services"
+            element={
+              <ProtectedRoute>
+                <AllMyServicesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-booked-services"
+            element={
+              <ProtectedRoute>
+                <AllMyBookedServicesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-all-tasks"
+            element={
+              <ProtectedRoute>
+                <AllMyTasksPage />
+              </ProtectedRoute>
+            }
+          />
 
-      </Routes>
+          {/* --- Admin Route --- */}
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminPage />
+              </AdminRoute>
+            }
+          />
+        </Routes>
+      </Suspense>
 
       <Footer />
     </>

@@ -86,5 +86,9 @@ const taskSchema = new mongoose.Schema(
 taskSchema.index({ location: '2dsphere' });
 taskSchema.index({ title: 'text', description: 'text', category: 'text' });
 
+taskSchema.index({ status: 1 });
+taskSchema.index({ category: 1 });
+taskSchema.index({ 'budget.amount': 1 });
+
 const Task = mongoose.model('Task', taskSchema);
 export default Task;

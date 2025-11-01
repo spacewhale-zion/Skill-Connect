@@ -44,7 +44,6 @@ const FindTasksPage = () => {
     setLoading(true);
     try {
       const results = await getTasks(filters);
-      console.log(results);
       setTasks(results);
     } catch (error) {
       toast.error('Failed to fetch tasks.');
