@@ -197,6 +197,14 @@ const LoginPage = () => {
             Register here
           </Link>
         </p>
+
+        <p className="text-sm text-center text-slate-300 -mt-2">
+          Didn't receive a code?{' '}
+          <Link to="/verify-email" className="font-medium text-yellow-400 hover:underline">
+            Verify Email
+          </Link>
+        </p>
+        
       </div>
     </div>
   );

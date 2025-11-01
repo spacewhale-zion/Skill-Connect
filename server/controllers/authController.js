@@ -137,7 +137,7 @@ const loginUser = asyncHandler(async (req, res) => {
   if (user && !user.isEmailVerified) {
     res.status(401);
     // Optionally: Resend verification email logic could go here
-    throw new Error('Email not verified. Please check your email for the verification code.');
+    throw new Error('Email not verified. Please Verify you Email first.');
   }
 
   if (user && (await user.matchPassword(password))) {
@@ -279,4 +279,50 @@ const resetPassword = asyncHandler(async (req, res) => {
   });
 });
 
-export { registerUser, loginUser, getUserProfile ,forgotPassword, resetPassword ,verifyEmail};
+
+const resendVerificationEmail = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    res.status(400);
+    throw new Error('Please provide an email address.');
+  }
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User with this email not found.');
+  }
+
+  if (user.isEmailVerified) {
+    res.status(400);
+    throw new Error('This email is already verified.');
+  }
+
+  // Generate a new verification code
+  const verificationCode = user.createEmailVerificationCode();
+  await user.save(); // Save user with the new code and expiry
+
+  // Send new verification email
+  const verificationURL = `${process.env.CLIENT_URL}/verify-email`;
+  const message = `Here is your new verification code: ${verificationCode}\n\nThis code will expire in 10 minutes.\n\nYou can enter the code here: ${verificationURL}`;
+
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: 'SkillConnect - New Verification Code',
+      text: message,
+    });
+
+    res.status(200).json({
+      message: 'New verification code sent to your email.',
+    });
+  } catch (err) {
+    console.error("EMAIL SENDING ERROR: ", err);
+    res.status(500);
+    throw new Error('Failed to send verification email. Please try again later.');
+  }
+});
+
+export { registerUser, loginUser, getUserProfile ,forgotPassword, resetPassword ,verifyEmail,resendVerificationEmail};

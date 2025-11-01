@@ -5,7 +5,8 @@ import {
   getUserProfile,
   forgotPassword, 
   resetPassword,  
-  verifyEmail
+  verifyEmail,
+  resendVerificationEmail
 } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import rateLimit from 'express-rate-limit';
@@ -30,6 +31,7 @@ router.post('/login', authLimiter, validate(loginSchema), loginUser);
 router.post('/forgot-password', authLimiter, forgotPassword);
 router.patch('/reset-password/:token', authLimiter, resetPassword);
 router.post('/verify-email', authLimiter, verifyEmail);
+router.post('/resend-verification', authLimiter, resendVerificationEmail);
 
 // Private route
 router.get('/me', protect, getUserProfile);

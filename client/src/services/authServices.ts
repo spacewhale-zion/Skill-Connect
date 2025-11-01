@@ -5,7 +5,6 @@ import { UserCredentials, UserRegistrationData,AuthUser } from '@/types/index'; 
 
 export const loginUser = async (credentials: UserCredentials) => {
   const response = await api.post('/auth/login', credentials);
-  console.log(response.data);
   return response.data;
 };
 
@@ -20,6 +19,10 @@ export const verifyEmailService = async (email: string, code: string): Promise<A
   return response.data; // Expecting the full logged-in user data + token
 };
 
+export const resendVerificationService = async (email: string): Promise<{ message: string }> => {
+  const { data } = await api.post('/auth/resend-verification', { email });
+  return data;
+};
 
 export const getMyProfile = async (): Promise<AuthUser> => {
   const { data } = await api.get('/auth/me');
