@@ -76,7 +76,6 @@ useEffect(() => {
 
     if (socket) {
       socket.on('new_notification', (newNotification: Notification) => {
-        console.log('Received new_notification event:', newNotification);
         if (newNotification.title !== 'New Chat Message') {
            toast.success(`New notification: ${newNotification.title}`);
         }

@@ -133,7 +133,6 @@ const RegisterPage = () => {
                 },
                 fcmToken: fcmToken || undefined,
             });
-            console.log(response);
             toast.success(response.message || 'Registration request sent! Check your email.');
             // Navigate to the verification page, passing the email
             navigate('/verify-email', { state: { email: email } });

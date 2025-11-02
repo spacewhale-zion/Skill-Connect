@@ -35,8 +35,6 @@ const AdminServicesTab: React.FC<AdminServicesTabProps> = ({
     // Get the services for the current page
     const currentServices = useMemo(() => services.slice(startIndex, endIndex), [services, startIndex, endIndex]);
     
-    // console.log(services)
-    // console.log(currentServices)
 
     const handleNextPage = () => {
         setCurrentPage(prev => Math.min(prev + 1, totalPages));

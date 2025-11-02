@@ -18,7 +18,7 @@ const router = express.Router();
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 requests per 15 minutes for auth actions
+  max: 100, // Limit each IP to 10 requests per 15 minutes for auth actions
   message: 'Too many authentication attempts from this IP, please try again after 15 minutes',
   standardHeaders: true,
   legacyHeaders: false,

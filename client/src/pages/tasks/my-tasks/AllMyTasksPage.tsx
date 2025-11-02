@@ -14,7 +14,6 @@ const AllMyTasksPage = () => {
       try {
         setIsLoading(true);
         const allTasks = await getAllMyTasks(); //
-        console.log(allTasks)
         setTasks(allTasks);
       } catch (error) {
         toast.error('Failed to load your tasks.');

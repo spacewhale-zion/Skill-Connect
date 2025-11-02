@@ -145,7 +145,6 @@ export const useAdminPage = () => {
                 search: serviceSearchTerm,
             });
             setServices(data.results);
-            console.log(services)
             setServiceTotalPages(data.totalPages);
             setServiceCount(data.totalCount);
         } catch (error) {

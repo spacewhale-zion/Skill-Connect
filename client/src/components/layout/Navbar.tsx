@@ -9,7 +9,6 @@ const Navbar = () => {
   const { user, logout, isAdmin } = useAuth();
   const { unreadCount } = useNotifications();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  console.log('Navbar render, unreadCount:', unreadCount);
 
 
   // Consistent link styling for reuse
