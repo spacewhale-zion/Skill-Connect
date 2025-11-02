@@ -16,22 +16,22 @@ import { registerSchema, loginSchema } from '../middleware/validationSchema.js';
 const router = express.Router();
 
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 10 requests per 15 minutes for auth actions
-  message: 'Too many authentication attempts from this IP, please try again after 15 minutes',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// const authLimiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   max: 100, // Limit each IP to 10 requests per 15 minutes for auth actions
+//   message: 'Too many authentication attempts from this IP, please try again after 15 minutes',
+//   standardHeaders: true,
+//   legacyHeaders: false,
+// });
 
 // Public routes
-router.post('/register', authLimiter, registerUser);
-router.post('/login', authLimiter, loginUser);
+router.post('/register',  registerUser);
+router.post('/login',  loginUser);
 
-router.post('/forgot-password', authLimiter, forgotPassword);
-router.patch('/reset-password/:token', authLimiter, resetPassword);
-router.post('/verify-email', authLimiter, verifyEmail);
-router.post('/resend-verification', authLimiter, resendVerificationEmail);
+router.post('/forgot-password',  forgotPassword);
+router.patch('/reset-password/:token',  resetPassword);
+router.post('/verify-email',  verifyEmail);
+router.post('/resend-verification',  resendVerificationEmail);
 
 // Private route
 router.get('/me', protect, getUserProfile);
