@@ -28,7 +28,7 @@ router.route('/mytasks').get(protect, getMyPostedTasks);
 router.route('/assignedtome').get(protect, getMyAssignedTasks);
 
 router.route('/')
-  .post(protect, validate(createTaskSchema), createTask)
+  .post(protect, createTask)
   .get(getTasks);
 
 // Parameterized routes come last

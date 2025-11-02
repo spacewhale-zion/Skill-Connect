@@ -25,8 +25,8 @@ const authLimiter = rateLimit({
 });
 
 // Public routes
-router.post('/register', authLimiter, validate(registerSchema), registerUser);
-router.post('/login', authLimiter, validate(loginSchema), loginUser);
+router.post('/register', authLimiter, registerUser);
+router.post('/login', authLimiter, loginUser);
 
 router.post('/forgot-password', authLimiter, forgotPassword);
 router.patch('/reset-password/:token', authLimiter, resetPassword);
