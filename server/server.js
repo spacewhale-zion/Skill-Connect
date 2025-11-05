@@ -3,9 +3,9 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import http from 'http'; // Import Node's built-in HTTP module
 import { Server } from 'socket.io'; // Import the Socket.IO Server class
-// import rateLimit from 'express-rate-limit';
-// import helmet from 'helmet';
-// import compression from 'compression';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
+import compression from 'compression';
 
 // --- Local Imports ---
 import connectDB from './config/db.js';
@@ -38,24 +38,24 @@ socketHandler(io);
 
 // --- Middleware ---
 app.use(cors());
-// app.use(helmet());
-// app.use(compression({threshold:1024}));
+app.use(helmet());
+app.use(compression({threshold:1024}));
 app.use(express.json());
 
 
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   max: 100, // Limit each IP to 100 requests per `windowMs`
-//   message: 'Too many requests from this IP, please try again after 15 minutes',
-//   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-//   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-// });
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per `windowMs`
+  message: 'Too many requests from this IP, please try again after 15 minutes',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
 
 // --- API Routes ---
 app.get('/', (req, res) => {
   res.send('SkillConnect API is running successfully...');
 });
-app.use('/api', apiRoutes);
+app.use('/api',limiter, apiRoutes);
 
 // --- Error Handling Middleware ---
 app.use(notFound);

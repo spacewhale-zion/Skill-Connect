@@ -65,22 +65,22 @@ const DashboardPage = () => {
             </div>
           </div>
         </div>
-        <div className="flex-shrink-0 w-full sm:w-auto flex items-center gap-4">
+        <div className="flex-shrink-0 w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3">
             {/* --- NEW BUTTON --- */}
-            <Link to="/my-all-tasks" className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 bg-slate-700 text-white font-bold py-2 px-5 rounded-lg hover:bg-slate-600 transition duration-300">
+            <Link to="/my-all-tasks" className="w-full sm:w-auto flex items-center justify-center gap-2 bg-slate-700 text-white font-bold py-2 px-5 rounded-lg hover:bg-slate-600 transition duration-300 text-sm">
                 View All Tasks
             </Link>
             <button
             onClick={() => setIsServiceModalOpen(true)}
-            className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 bg-slate-700 text-white font-bold py-2 px-5 rounded-lg hover:bg-slate-600 transition duration-300"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-slate-700 text-white font-bold py-2 px-5 rounded-lg hover:bg-slate-600 transition duration-300 text-sm"
             >
             + List Service
             </button>
             <button
             onClick={() => setIsTaskModalOpen(true)}
-            className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 bg-yellow-400 text-slate-900 font-bold py-2 px-5 rounded-lg hover:bg-yellow-500 transition duration-300"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-yellow-400 text-slate-900 font-bold py-2 px-5 rounded-lg hover:bg-yellow-500 transition duration-300 text-sm"
             >
-            <FaPlus /> Post Task
+            <FaPlus size={12}/> Post Task
             </button>
         </div>
       </div>
@@ -101,19 +101,20 @@ const DashboardPage = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-white">My Activity</h2>
         </div>
-        <div className="border-b border-slate-700 mb-6">
-          <nav className="-mb-px flex justify-between items-center">
-            <div className="flex space-x-6">
-              <button onClick={() => setActiveTab('posted')} className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'posted' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-slate-300 hover:text-white'}`}>
+        <div className="border-b border-slate-700 mb-6 overflow-x-auto">
+          <nav className="-mb-px flex justify-between items-center min-w-max">
+          <div className="flex space-x-6 min-w-max">
+            <button onClick={() => setActiveTab('posted')} className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'posted' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-slate-300 hover:text-white'}`}>
+
                 Tasks I've Posted ({regularPostedTasks.length})
               </button>
-              <button onClick={() => setActiveTab('booked')} className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'booked' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-slate-300 hover:text-white'}`}>
+              <button onClick={() => setActiveTab('booked')} className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'booked' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-slate-300 hover:text-white'}`}>
                 Services Booked ({bookedServices.length})
               </button>
-              <button onClick={() => setActiveTab('assigned')} className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'assigned' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-slate-300 hover:text-white'}`}>
+              <button onClick={() => setActiveTab('assigned')} className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'assigned' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-slate-300 hover:text-white'}`}>
                 Jobs I'm Working On ({assignedTasks.length})
               </button>
-              <button onClick={() => setActiveTab('services')} className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'services' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-slate-300 hover:text-white'}`}>
+              <button onClick={() => setActiveTab('services')} className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === 'services' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-slate-300 hover:text-white'}`}>
                 Services I Offer ({offeredServices.length})
               </button>
             </div>

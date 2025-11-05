@@ -9,6 +9,7 @@ import NotificationPermissionHandler from "@/components/notifications/Notificati
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AdminRoute from "@/components/auth/AdminRoute";
 import type { AuthUser } from "@/types";
+import LoadingSpinner from "@/components/layout/LoadingSpinner";
 
 // 🔹 Lazy-loaded pages
 const HomePage = lazy(() => import("./pages/HomePage"));
@@ -18,16 +19,32 @@ const DashboardLayout = lazy(() => import("./pages/dashboard/DashboardLayout"));
 const TaskDetailsPage = lazy(() => import("./pages/tasks/TaskDetailsPage"));
 const ProfilePage = lazy(() => import("./pages/dashboard/ProfilePage"));
 const FindTasksPage = lazy(() => import("./pages/tasks/FindTaskPage"));
-const NotificationsPage = lazy(() => import("./pages/notifications/NotificationsPage"));
+const NotificationsPage = lazy(
+  () => import("./pages/notifications/NotificationsPage")
+);
 const FindServicesPage = lazy(() => import("./pages/services/FindServicePage"));
-const ServiceDetailsPage = lazy(() => import("./pages/services/ServiceDetailsPage"));
-const AllMyPostedTasksPage = lazy(() => import("./pages/tasks/my-tasks/MyPostedTasksPage"));
-const AllMyAssignedTasksPage = lazy(() => import("./pages/tasks/my-tasks/MyAssignedTasksPage"));
-const AllMyServicesPage = lazy(() => import("./pages/services/my-services/MyOfferedServicesPage"));
-const AllMyBookedServicesPage = lazy(() => import("./pages/services/my-services/MyBookedServicesPage"));
-const AllMyTasksPage = lazy(() => import("./pages/tasks/my-tasks/AllMyTasksPage"));
+const ServiceDetailsPage = lazy(
+  () => import("./pages/services/ServiceDetailsPage")
+);
+const AllMyPostedTasksPage = lazy(
+  () => import("./pages/tasks/my-tasks/MyPostedTasksPage")
+);
+const AllMyAssignedTasksPage = lazy(
+  () => import("./pages/tasks/my-tasks/MyAssignedTasksPage")
+);
+const AllMyServicesPage = lazy(
+  () => import("./pages/services/my-services/MyOfferedServicesPage")
+);
+const AllMyBookedServicesPage = lazy(
+  () => import("./pages/services/my-services/MyBookedServicesPage")
+);
+const AllMyTasksPage = lazy(
+  () => import("./pages/tasks/my-tasks/AllMyTasksPage")
+);
 const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage"));
-const ForgotPasswordPage = lazy(() => import("./pages/auth/ForgotPasswordPage"));
+const ForgotPasswordPage = lazy(
+  () => import("./pages/auth/ForgotPasswordPage")
+);
 const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage"));
 const AdminPage = lazy(() => import("./pages/admin/AdminPage"));
 const SuspendedPage = lazy(() => import("./pages/auth/SuspendedPage"));
@@ -39,7 +56,11 @@ function App() {
     recipientName: string;
   } | null>(null);
 
-  const openChatWindow = (conversationId: string, recipientId: string, recipientName: string) => {
+  const openChatWindow = (
+    conversationId: string,
+    recipientId: string,
+    recipientName: string
+  ) => {
     setChatWindowData({ conversationId, recipientId, recipientName });
   };
 
@@ -51,16 +72,24 @@ function App() {
       {chatWindowData && (
         <ChatWindow
           taskId={chatWindowData.conversationId}
-          recipient={{
-            _id: chatWindowData.recipientId,
-            name: chatWindowData.recipientName,
-          } as AuthUser}
+          recipient={
+            {
+              _id: chatWindowData.recipientId,
+              name: chatWindowData.recipientName,
+            } as AuthUser
+          }
           onClose={() => setChatWindowData(null)}
         />
       )}
 
       {/* 🔹 Wrap all routes in Suspense fallback */}
-      <Suspense fallback={<div className="text-center mt-10">Loading...</div>}>
+      <Suspense
+        fallback={
+          <div className="bg-slate-900 min-h-screen flex items-center justify-center">
+            <LoadingSpinner />
+          </div>
+        }
+      >
         <Routes>
           {/* --- Public Routes --- */}
           <Route path="/" element={<HomePage />} />
@@ -70,7 +99,10 @@ function App() {
           <Route path="/services" element={<FindServicesPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+          <Route
+            path="/reset-password/:token"
+            element={<ResetPasswordPage />}
+          />
           <Route path="/suspended" element={<SuspendedPage />} />
 
           {/* --- Protected Routes --- */}

@@ -1,8 +1,10 @@
+// client/src/components/layout/Navbar.tsx
+
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/authContext';
 import { useNotifications } from '../../context/notificationContext';
-import { FaBell, FaBars, FaTimes, FaUserShield } from 'react-icons/fa'; // Added FaUserShield
+import { FaBell, FaBars, FaTimes, FaUserShield } from 'react-icons/fa';
 
 const Navbar = () => {
   // Get user, logout function, AND isAdmin flag from useAuth
@@ -15,6 +17,10 @@ const Navbar = () => {
   const linkClasses = "py-2 px-3 rounded-md hover:bg-slate-700 transition-colors duration-300";
   // Specific style for the admin button
   const adminLinkClasses = "py-2 px-3 rounded-md bg-indigo-600 hover:bg-indigo-700 transition-colors duration-300 flex items-center gap-1 text-sm font-semibold";
+  
+  // ADDED: Shared class for the yellow button
+  const yellowButtonClasses = "bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold py-2 px-4 rounded-md text-sm transition-colors duration-300";
+
 
   const navLinks = (
     <>
@@ -41,7 +47,8 @@ const Navbar = () => {
             <>
               {/* Conditionally render Admin button for desktop */}
               {isAdmin && (
-                <Link to="/admin" className={`hidden sm:flex ${adminLinkClasses}`}>
+                // Changed sm:flex to hidden md:flex for better mobile spacing consistency
+                <Link to="/admin" className={`hidden md:flex ${adminLinkClasses}`}>
                   <FaUserShield size={14} /> Admin
                 </Link>
               )}
@@ -53,13 +60,15 @@ const Navbar = () => {
                   </span>
                 )}
               </Link>
-              <Link to="/dashboard" className="hidden sm:block bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold py-2 px-4 rounded-md text-sm transition-colors duration-300">Dashboard</Link>
-              <button onClick={logout} className="hidden sm:block bg-slate-700 hover:bg-slate-600 text-white py-2 px-4 rounded-md text-sm transition-colors duration-300">Logout</button>
+              {/* Hiding Dashboard and Logout on mobile (md:block) */}
+              <Link to="/dashboard" className={`hidden md:block ${yellowButtonClasses}`}>Dashboard</Link>
+              <button onClick={logout} className="hidden md:block bg-slate-700 hover:bg-slate-600 text-white py-2 px-4 rounded-md text-sm transition-colors duration-300">Logout</button>
             </>
           ) : (
             <>
-              <Link to="/login" className="py-2 px-3 hover:text-yellow-400 transition-colors duration-300">Login</Link>
-              <Link to="/register" className="bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold py-2 px-4 rounded-md text-sm transition-colors duration-300">Register</Link>
+              {/* FIX 1: Hide Login/Register on mobile to avoid crowding the header (md:block) */}
+              <Link to="/login" className="hidden md:block py-2 px-3 hover:text-yellow-400 transition-colors duration-300">Login</Link>
+              <Link to="/register" className={`hidden md:block ${yellowButtonClasses}`}>Register</Link>
             </>
           )}
           {/* Hamburger Menu Button */}
@@ -76,7 +85,7 @@ const Navbar = () => {
         <div className="md:hidden px-4 pb-4 border-t border-slate-700">
           <div className="flex flex-col space-y-2 pt-4">
             {navLinks}
-             {user && (
+             {user ? ( // Authenticated Links in Menu
                 <>
                     <hr className="border-slate-700 my-2"/>
                     {/* Conditionally render Admin button for mobile */}
@@ -88,6 +97,18 @@ const Navbar = () => {
                     <Link to="/dashboard" className={linkClasses} onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
                     <button onClick={() => { logout(); setIsMenuOpen(false); }} className={`text-left w-full ${linkClasses}`}>Logout</button>
                 </>
+             ) : (
+                 /* FIX 2: Add Unauthenticated Links to Menu */
+                 <>
+                    <hr className="border-slate-700 my-2"/>
+                    <Link to="/login" className={linkClasses} onClick={() => setIsMenuOpen(false)}>Login</Link>
+                    <Link 
+                        to="/register" 
+                        // Modified classes to fill the width for the mobile button
+                        className={`text-left w-full ${yellowButtonClasses.replace('py-2 px-4', 'py-2 px-3')} w-full text-center`} 
+                        onClick={() => setIsMenuOpen(false)}>Register
+                    </Link>
+                 </>
              )}
           </div>
         </div>

@@ -1,41 +1,47 @@
-import React, { useState } from 'react';
-import toast from 'react-hot-toast';
-import { resetPassword } from '@/services/authServices';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/authContext';
+import React, { useState } from "react";
+import toast from "react-hot-toast";
+import { resetPassword } from "@/services/authServices";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/authContext";
 
 const ResetPasswordPage = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      return toast.error("Passwords do not match.");
+      return toast.error("Passwords do not match.", { id: "error-toast" });
     }
     if (!token) {
-        return toast.error("Invalid or missing reset token.");
+      return toast.error("Invalid or missing reset token.", {
+        id: "error-toast",
+      });
     }
 
     setIsSubmitting(true);
     try {
       const user = await resetPassword(password, token);
-      toast.success('Password reset successfully! Logging you in...');
+      toast.success("Password reset successfully! Logging you in...");
       // Manually log the user in with the new credentials from the backend response
       await login({ email: user.email, password: password });
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (error) {
-      toast.error('Failed to reset password. The token may be invalid or expired.');
+      toast.error(
+        "Failed to reset password. The token may be invalid or expired.",
+        { id: "error-toast" }
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const inputStyles = "w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition";
+  const inputStyles =
+    "w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none transition";
 
   return (
     <div className="relative flex items-center justify-center min-h-screen bg-slate-900 text-white">
@@ -45,15 +51,37 @@ const ResetPasswordPage = () => {
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-slate-300">New Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className={`mt-1 ${inputStyles}`} placeholder="••••••••" />
+            <label className="block text-sm font-medium text-slate-300">
+              New Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className={`mt-1 ${inputStyles}`}
+              placeholder="••••••••"
+            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300">Confirm New Password</label>
-            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className={`mt-1 ${inputStyles}`} placeholder="••••••••" />
+            <label className="block text-sm font-medium text-slate-300">
+              Confirm New Password
+            </label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              className={`mt-1 ${inputStyles}`}
+              placeholder="••••••••"
+            />
           </div>
-          <button type="submit" disabled={isSubmitting} className="w-full px-4 py-3 font-bold text-slate-900 bg-yellow-400 rounded-lg hover:bg-yellow-500 disabled:opacity-50 transition-colors">
-            {isSubmitting ? 'Resetting...' : 'Reset Password'}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full px-4 py-3 font-bold text-slate-900 bg-yellow-400 rounded-lg hover:bg-yellow-500 disabled:opacity-50 transition-colors"
+          >
+            {isSubmitting ? "Resetting..." : "Reset Password"}
           </button>
         </form>
       </div>
